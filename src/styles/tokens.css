@@ -1,0 +1,157 @@
+/* Theme values consumed by the aliases in globals.css. */
+
+:root,
+[data-theme="paper"] {
+  --mt-bg: #f1e7d0;
+  --mt-surface: rgba(255, 250, 235, 0.45);
+  --mt-surface-alt: rgba(60, 30, 10, 0.05);
+  --mt-ink: #2a1a08;
+  --mt-ink-soft: #7a5028;
+  --mt-ink-dim: rgba(60, 40, 20, 0.32);
+  --mt-border: #6b4a2b;
+  --mt-border-soft: rgba(106, 74, 43, 0.35);
+  --mt-accent: #8b1a1a;
+  --mt-accent-ink: #fff3d8;
+  --mt-cursor: #8b1a1a;
+  --mt-error: #8b1a1a;
+  --mt-success: #3a6b2b;
+
+  --mt-keycap: #e8d9b8;
+  --mt-keycap-border: #6b4a2b;
+  --mt-keycap-shadow: 0 2px 0 #6b4a2b, inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --mt-keycap-active: #8b1a1a;
+  --mt-keycap-active-ink: #fff3d8;
+  --mt-keycap-active-shadow:
+    0 3px 0 #5a0e0e, inset 0 1px 0 rgba(255, 255, 255, 0.15);
+
+  --mt-font-ui: var(--font-courier-prime), "Courier New", monospace;
+  --mt-font-display:
+    var(--font-special-elite), var(--font-courier-prime), serif;
+  --mt-font-myanmar:
+    "Masterpiece Uni Type", "Noto Sans Myanmar", "Padauk", sans-serif;
+
+  --mt-glow: 0;
+  --mt-vignette: 0.18;
+
+  color-scheme: light;
+}
+
+[data-theme="phosphor"] {
+  --mt-bg: #070d08;
+  --mt-surface: rgba(124, 240, 139, 0.04);
+  --mt-surface-alt: rgba(124, 240, 139, 0.025);
+  --mt-ink: #7cf08b;
+  --mt-ink-soft: rgba(124, 240, 139, 0.7);
+  --mt-ink-dim: rgba(124, 240, 139, 0.32);
+  --mt-border: rgba(124, 240, 139, 0.35);
+  --mt-border-soft: rgba(124, 240, 139, 0.2);
+  --mt-accent: #7cf08b;
+  --mt-accent-ink: #070d08;
+  --mt-cursor: #7cf08b;
+  --mt-error: #ff5a4a;
+  --mt-success: #7cf08b;
+
+  --mt-keycap: transparent;
+  --mt-keycap-border: rgba(124, 240, 139, 0.3);
+  --mt-keycap-shadow: none;
+  --mt-keycap-active: rgba(124, 240, 139, 0.2);
+  --mt-keycap-active-ink: #fff;
+  --mt-keycap-active-shadow:
+    0 0 14px rgba(124, 240, 139, 0.6), inset 0 0 10px rgba(124, 240, 139, 0.25);
+
+  --mt-font-ui:
+    var(--font-jetbrains-mono), var(--font-ibm-plex-mono), monospace;
+  --mt-font-display: var(--font-jetbrains-mono), monospace;
+
+  --mt-glow: 0.6;
+  --mt-vignette: 0.5;
+
+  color-scheme: dark;
+}
+
+[data-theme="foundry"] {
+  --mt-bg: #1d1f23;
+  --mt-surface: #0e1013;
+  --mt-surface-alt: linear-gradient(180deg, #2a2c30, #1d1f23);
+  --mt-ink: #e8b86b;
+  --mt-ink-soft: #8a7a52;
+  --mt-ink-dim: rgba(216, 210, 196, 0.28);
+  --mt-border: #0a0a0c;
+  --mt-border-soft: rgba(232, 184, 107, 0.25);
+  --mt-accent: #e8b86b;
+  --mt-accent-ink: #1d1f23;
+  --mt-cursor: #e8b86b;
+  --mt-error: #d85a3a;
+  --mt-success: #7ab86b;
+
+  --mt-keycap: radial-gradient(circle at 50% 30%, #3a3630, #1a1814);
+  --mt-keycap-border: #0a0a0c;
+  --mt-keycap-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 3px 0 #050608;
+  --mt-keycap-active: radial-gradient(
+    circle at 50% 30%,
+    #f5cd80,
+    #b88838 70%,
+    #8a6018
+  );
+  --mt-keycap-active-ink: #1d1f23;
+  --mt-keycap-active-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 0 18px rgba(232, 184, 107, 0.5),
+    0 3px 0 #5a3e08;
+
+  --mt-font-ui: var(--font-ibm-plex-mono), monospace;
+  --mt-font-display: var(--font-ibm-plex-mono), monospace;
+
+  --mt-glow: 0.3;
+  --mt-vignette: 0.3;
+
+  color-scheme: dark;
+}
+
+[data-theme="amber"] {
+  --mt-bg: #150d05;
+  --mt-surface: rgba(255, 176, 102, 0.03);
+  --mt-surface-alt: rgba(255, 176, 102, 0.05);
+  --mt-ink: #ffd9a8;
+  --mt-ink-soft: rgba(255, 176, 102, 0.7);
+  --mt-ink-dim: rgba(255, 176, 102, 0.25);
+  --mt-border: rgba(255, 176, 102, 0.3);
+  --mt-border-soft: rgba(255, 176, 102, 0.18);
+  --mt-accent: #ffb066;
+  --mt-accent-ink: #150d05;
+  --mt-cursor: #ffb066;
+  --mt-error: #ff6a4a;
+  --mt-success: #ffd9a8;
+
+  --mt-keycap: rgba(40, 22, 8, 0.55);
+  --mt-keycap-border: rgba(255, 176, 102, 0.3);
+  --mt-keycap-shadow: inset 0 1px 0 rgba(255, 176, 102, 0.08);
+  --mt-keycap-active: radial-gradient(
+    circle at 50% 35%,
+    #ffe2b8,
+    #ffb066 60%,
+    #c87830
+  );
+  --mt-keycap-active-ink: #150d05;
+  --mt-keycap-active-shadow:
+    0 0 24px rgba(255, 176, 102, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+
+  --mt-font-ui: var(--font-cutive-mono), monospace;
+  --mt-font-display: var(--font-special-elite), var(--font-cutive-mono), serif;
+
+  --mt-glow: 0.5;
+  --mt-vignette: 0.5;
+
+  color-scheme: dark;
+}
+
+/* Finger colors are theme-independent and shared by both hands. */
+:root {
+  --mt-finger-pinky: #d8567c;
+  --mt-finger-ring: #d99a3f;
+  --mt-finger-middle: #3fae9e;
+  --mt-finger-index: #5f8bdc;
+  --mt-finger-thumb: #9584cf;
+
+  --mt-finger-tint: 15%;
+  --mt-finger-stripe: 72%;
+}

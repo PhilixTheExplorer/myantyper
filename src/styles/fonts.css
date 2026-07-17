@@ -1,0 +1,31 @@
+@font-face {
+  font-family: "Masterpiece Uni Type";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/masterpiece-uni-type.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Noto Sans Myanmar";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/noto-sans-myanmar-400.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Padauk";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/padauk-400.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Pyidaungsu";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/pyidaungsu-400.ttf") format("truetype");
+}

@@ -1,0 +1,5 @@
+pre-commit:
+  commands:
+    biome:
+      glob: "*.{css,js,jsx,json,ts,tsx}"
+      run: pnpm exec biome check {staged_files}

@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/PhilixTheExplorer/myantyper/security/advisories/new
+    about: Privately report a suspected vulnerability; do not open a public issue.
+  - name: Contributing guide
+    url: https://github.com/PhilixTheExplorer/myantyper/blob/main/CONTRIBUTING.md
+    about: Read how to contribute lessons, code, accessibility fixes, and keyboard-layout corrections.
+  - name: Sponsor MyanTyper
+    url: https://github.com/sponsors/PhilixTheExplorer
+    about: Support ongoing maintenance and review work.

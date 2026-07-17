@@ -1,0 +1,58 @@
+{
+  "name": "myantyper",
+  "version": "0.1.0",
+  "description": "A free, open-source Myanmar Unicode touch-typing tutor for the Windows Visual-order keyboard.",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "author": "PhilixTheExplorer",
+  "homepage": "https://myantyper.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PhilixTheExplorer/myantyper.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PhilixTheExplorer/myantyper/issues"
+  },
+  "keywords": [
+    "burmese",
+    "myanmar",
+    "myanmar-unicode",
+    "touch-typing",
+    "typing-tutor"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@11.13.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "biome check",
+    "format": "biome format --write",
+    "lint:fix": "biome check . --write",
+    "prepare": "lefthook install",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.24.0",
+    "next": "16.2.10",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "tailwind-merge": "^3.6.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.4",
+    "@tailwindcss/postcss": "^4.3.2",
+    "@types/node": "^26.1.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "babel-plugin-react-compiler": "1.0.0",
+    "lefthook": "^2.1.10",
+    "tailwindcss": "^4.3.2",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.10"
+  }
+}
