@@ -16,7 +16,7 @@ statically generated:
 - Vitest 4, Biome 2, and Lefthook 2 for local and CI verification
 - The current release requires no account and has no backend, analytics, or
   remote persistence
-- Browser `localStorage` for session history and visual preferences
+- Browser IndexedDB for session history and `localStorage` for visual preferences
 - WebAudio synthesis for feedback; no audio files
 
 Practice pages are generated from the finite curriculum at build time. The
@@ -35,8 +35,8 @@ separate static export reproduces those headers at the hosting layer.
    Shift state, not the operating system's emitted `event.key`.
 5. **Display order and typing order are separate.** Myanmar text remains normal
    Unicode for display; visual keyboard order is derived for keystroke matching.
-6. **Persistence stays local and bounded.** Storage access is isolated and
-   validated.
+6. **Persistence stays local and validated.** Storage access is isolated behind
+   explicit contracts.
 7. **Browser capabilities default closed.** Production responses set a content
    security policy and deny unused browser permissions, framing, and MIME
    sniffing.
@@ -48,14 +48,14 @@ separate static export reproduces those headers at the hosting layer.
 | `src/app/` | Routes, metadata, static parameter generation, page composition |
 | `src/components/` | Grouped by role: `layout/` (app chrome + tweaks), `providers/` (theme and history contexts), `ui/` (shared presentation primitives), `keyboard/` (on-screen board), and one folder per feature (`home/`, `lessons/`, `history/`, `free/`, `typing/`). A component used by a single feature lives in that feature's folder; only multi-consumer primitives live in `ui/` |
 | `src/components/typing/` | Practice-session feature slice with a public `index.ts` barrel and three internal layers: `engine/` (pure matching state machine, immutable target prep, shared types), `hooks/` (the thin `useTypingSession` adapter plus focused input/timer/audio/flash/persistence hooks), and `view/` (coordinator plus separated header/practice/completion presentation) |
-| `src/components/providers/HistoryProvider.tsx` | In-memory history cache, same-tab updates, and cross-tab storage synchronization |
+| `src/components/providers/HistoryProvider.tsx` | In-memory history cache, same-tab updates, and cross-context refresh handling |
 | `src/components/typing/hooks/useActiveTimer.ts` | Route-local elapsed-time lifecycle that excludes paused intervals |
 | `src/lib/curriculum/` | Per-track folders containing small unit modules and reviewed lesson content |
 | `src/lib/lessons.ts` | Curriculum assembly, derived metadata, lookup helpers |
 | `src/lib/keyboard.ts` | Authoritative KBDMYAN keycaps and character-to-key mapping |
 | `src/lib/syllable.ts` | Myanmar segmentation and visual typing order |
 | `src/lib/storage.ts` | Validated localStorage reads and writes for device-local preferences (tweaks, Free Type draft) |
-| `src/lib/progress/` | Session-history schema and validation (`types.ts`), the async `ProgressStore` seam (`store.ts`), neutral store composition (`index.ts`), and the localStorage implementation (`localStore.ts`) |
+| `src/lib/progress/` | Session-history schema and validation (`types.ts`), the async `ProgressStore` seam (`store.ts`), neutral store composition (`index.ts`), and the IndexedDB implementation (`indexedDbStore.ts`) |
 | `src/lib/wpm.ts` | Pure typing-stat calculations |
 | `src/lib/lessonStats.ts` | Pure per-lesson history roll-up (best WPM, best accuracy, attempts) for the catalogue |
 | `src/lib/themes.ts` | Theme and Myanmar-font definitions |
@@ -176,34 +176,37 @@ async read would surface as a flash:
 - `myantyper.free-type-draft`: a bounded Unicode draft used to cross from the
   Free Type editor at `/free` to the session route at `/free/session`
 
-`src/lib/progress/` owns `myantyper.history`, the log of completed sessions.
+`src/lib/progress/` owns the `myantyper-progress` IndexedDB database and its log
+of completed sessions.
 History is modelled as an **append-only log**: a finished session is immutable,
 so every entry carries a stable `id` and merging two devices is a union by id
 with no conflict resolution. Entries record `completedAt` as epoch milliseconds
 and a `schemaVersion` per entry, not just per store, because once entries sync
-one log holds records written by clients on different versions. The stored
-value is an envelope, `{ version, entries }`. The app is still beta, so
-unrecognized formats read as empty and there is currently no migration or
-backward-compatibility path.
+one log holds records written by clients on different versions.
 
-Access goes through the `ProgressStore` interface, which is async even though
-the only implementation today is synchronous localStorage. IndexedDB or a
-server behind an account both are async, and callers should not change shape
-when that lands. `getProgressStore()` in `index.ts` is the neutral composition
-point.
+The database starts with three object stores:
+
+- `sessions`: immutable records keyed by local scope and session ID, with
+  indexes for scope, completion time, and lesson ID
+- `outbox`: reserved for account-scoped uploads in the sync phase
+- `syncMetadata`: reserved for each account's remote pull cursor and sync time
+
+The current store uses the `anonymous` scope. Account-specific scopes and the
+reserved sync stores do not affect signed-out behavior.
+
+Access goes through the async `ProgressStore` interface. `getProgressStore()`
+in `index.ts` is the neutral composition point for the current IndexedDB store
+and a future syncing store.
 `HistoryProvider` holds the live cache and subscribes to the store, so
-cross-tab `storage` handling and Web Locks stay inside the store rather than
-the provider. It also exposes loading and failure state so remote errors do not
-become unhandled promise rejections.
+cross-context `BroadcastChannel` handling stays inside the store rather than
+the provider. It also exposes loading and failure state so persistence errors
+do not become unhandled promise rejections.
 
-Files touching localStorage require an SSR guard. Invalid stored values fall
-back to defaults rather than breaking rendering; a malformed entry is dropped
-individually rather than discarding the whole log. History is not truncated,
-because doing so could discard records before a future sync uploads them.
-Oversized payloads are left untouched and surfaced as an error. A future
-server should keep device-authored `completedAt` and attach authoritative sync
-metadata such as `receivedAt` separately. The current release has no server
-sync.
+Browser storage access remains behind client-only effects. Invalid session
+records are dropped individually rather than breaking the whole history. There
+is no application-level history cap. A future server should keep
+device-authored `completedAt` and attach authoritative sync metadata such as
+`receivedAt` separately. The current release has no server sync.
 
 Free Type input is capped at 5,000 Unicode code points before a session can
 start. A validated draft is saved before navigation to `/free/session`, so the

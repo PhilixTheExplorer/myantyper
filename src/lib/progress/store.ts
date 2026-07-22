@@ -6,7 +6,7 @@ export interface ProgressStore {
   listHistory(): Promise<HistoryEntry[]>;
   /** Idempotent by entry id. Resolves to the resulting log, newest first. */
   appendHistory(entry: HistoryEntry): Promise<HistoryEntry[]>;
-  /** Fires on changes from other tabs. Returns an unsubscribe. */
+  /** Fires on changes from another browser context. Returns an unsubscribe. */
   subscribe(onChange: () => void): () => void;
 }
 
