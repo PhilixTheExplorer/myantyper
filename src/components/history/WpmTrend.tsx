@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import type { HistoryEntry } from "@/lib/storage";
+import type { HistoryEntry } from "@/lib/progress/types";
 
 const W = 760;
 const H = 240;
@@ -211,7 +211,7 @@ export function WpmTrend({
             const isLast = i === n - 1;
             return (
               <circle
-                key={`${trend[i].date}-${trend[i].lessonId}`}
+                key={trend[i].id}
                 cx={xAt(i)}
                 cy={yAt(w)}
                 r={isHover ? 6 : isLast ? 5 : 4}
@@ -252,7 +252,8 @@ export function WpmTrend({
             </div>
             <div className="text-ink truncate mt-1">{active.title}</div>
             <div className="text-ink-soft mt-0.5">
-              {active.accuracy}% · {new Date(active.date).toLocaleDateString()}
+              {active.accuracy}% ·{" "}
+              {new Date(active.completedAt).toLocaleDateString()}
             </div>
           </div>
         )}

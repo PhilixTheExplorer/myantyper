@@ -3,7 +3,7 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
-import { summarizeHistory } from "@/lib/storage";
+import { summarizeHistory } from "@/lib/progress/types";
 import { useHistory } from "../providers/HistoryProvider";
 
 export function HomeStats() {

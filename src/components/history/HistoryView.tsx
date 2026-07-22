@@ -1,18 +1,44 @@
 "use client";
 
 import { useMemo } from "react";
-import { summarizeHistory } from "@/lib/storage";
+import { summarizeHistory } from "@/lib/progress/types";
 import { formatDuration } from "@/lib/wpm";
 import { useHistory } from "../providers/HistoryProvider";
 import { StatsPanel } from "../ui/StatsPanel";
 import { WpmTrend } from "./WpmTrend";
 
 export function HistoryView() {
-  const { history } = useHistory();
+  const { history, historyError, isHistoryLoading, retryHistory } =
+    useHistory();
 
   const totals = useMemo(() => summarizeHistory(history), [history]);
 
+  if (isHistoryLoading && !history.length) {
+    return (
+      <div className="mt-surface p-10 text-center text-ink-soft">
+        Loading history…
+      </div>
+    );
+  }
+
   if (!history.length) {
+    if (historyError) {
+      return (
+        <div
+          role="alert"
+          className="mt-surface flex items-center justify-between gap-4 border-error p-4 text-sm text-error"
+        >
+          <span>{historyError}</span>
+          <button
+            type="button"
+            className="mt-action mt-action-outline shrink-0 border border-border-soft px-3 py-2 text-xs tracking-widest uppercase"
+            onClick={retryHistory}
+          >
+            Retry
+          </button>
+        </div>
+      );
+    }
     return (
       <div className="mt-surface p-10 text-center text-ink-soft">
         No sessions yet. Complete a lesson to see your history here.
@@ -22,6 +48,21 @@ export function HistoryView() {
 
   return (
     <>
+      {historyError && (
+        <div
+          role="alert"
+          className="mt-surface mb-6 flex items-center justify-between gap-4 border-error p-4 text-sm text-error"
+        >
+          <span>{historyError}</span>
+          <button
+            type="button"
+            className="mt-action mt-action-outline shrink-0 border border-border-soft px-3 py-2 text-xs tracking-widest uppercase"
+            onClick={retryHistory}
+          >
+            Retry
+          </button>
+        </div>
+      )}
       <div className="mb-6">
         <StatsPanel
           stats={[
@@ -68,7 +109,7 @@ export function HistoryView() {
           </div>
           {history.map((h, i) => (
             <div
-              key={`${h.date}-${h.lessonId}`}
+              key={h.id}
               className="grid grid-cols-[1.6fr_2fr_0.8fr_0.8fr_0.8fr_0.8fr] px-5 py-3.5 text-sm items-center"
               style={{
                 borderBottom:
@@ -78,7 +119,7 @@ export function HistoryView() {
               }}
             >
               <div className="text-ink-soft">
-                {new Date(h.date).toLocaleString()}
+                {new Date(h.completedAt).toLocaleString()}
               </div>
               <div className="text-ink">
                 {h.lessonId} · {h.title}

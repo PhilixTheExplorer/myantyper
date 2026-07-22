@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { lessonStatsFromHistory } from "./lessonStats";
-import type { HistoryEntry } from "./storage";
+import { HISTORY_SCHEMA_VERSION, type HistoryEntry } from "./progress/types";
+
+let nextId = 0;
 
 function entry(partial: Partial<HistoryEntry>): HistoryEntry {
+  nextId += 1;
   return {
-    date: "2026-07-16T00:00:00.000Z",
+    id: `test-${nextId}`,
+    schemaVersion: HISTORY_SCHEMA_VERSION,
+    completedAt: Date.UTC(2026, 6, 16),
     lessonId: "core-u01-a",
     title: "Drill 1",
     wpm: 20,

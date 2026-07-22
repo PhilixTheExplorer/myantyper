@@ -5,19 +5,23 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
+import { getProgressStore } from "@/lib/progress";
+import { progressErrorMessage } from "@/lib/progress/store";
 import {
-  HISTORY_STORAGE_KEY,
+  type HistoryDraft,
   type HistoryEntry,
-  loadHistory,
-  MAX_HISTORY_ENTRIES,
-  saveHistory,
-} from "@/lib/storage";
+  stampEntry,
+} from "@/lib/progress/types";
 
 interface HistoryContextValue {
   history: HistoryEntry[];
-  appendHistory: (entry: HistoryEntry) => void;
+  historyError: string | null;
+  isHistoryLoading: boolean;
+  appendHistory: (draft: HistoryDraft) => Promise<boolean>;
+  retryHistory: () => void;
 }
 
 const HistoryContext = createContext<HistoryContextValue | null>(null);
@@ -31,33 +35,69 @@ export function useHistory(): HistoryContextValue {
 
 export function HistoryProvider({ children }: { children: React.ReactNode }) {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true);
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  const store = useMemo(() => getProgressStore(), []);
 
+  // refreshVersion intentionally restarts this subscription after a retry.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: see above
   useEffect(() => {
-    setHistory(loadHistory());
-
-    const syncHistory = (event: StorageEvent) => {
-      if (event.key === HISTORY_STORAGE_KEY) setHistory(loadHistory());
+    let active = true;
+    const refresh = () => {
+      setIsHistoryLoading(true);
+      void store
+        .listHistory()
+        .then((entries) => {
+          if (!active) return;
+          setHistory(entries);
+          setHistoryError(null);
+        })
+        .catch((error: unknown) => {
+          if (active) setHistoryError(progressErrorMessage(error));
+        })
+        .finally(() => {
+          if (active) setIsHistoryLoading(false);
+        });
     };
-    window.addEventListener("storage", syncHistory);
-    return () => window.removeEventListener("storage", syncHistory);
+
+    refresh();
+    const unsubscribe = store.subscribe(refresh);
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [refreshVersion, store]);
+
+  const retryHistory = useCallback(() => {
+    setRefreshVersion((version) => version + 1);
   }, []);
 
-  const appendHistory = useCallback((entry: HistoryEntry) => {
-    const write = () => {
-      const next = [entry, ...loadHistory()].slice(0, MAX_HISTORY_ENTRIES);
-      saveHistory(next);
-      setHistory(next);
-    };
-
-    if ("locks" in navigator) {
-      void navigator.locks.request(HISTORY_STORAGE_KEY, write);
-    } else {
-      write();
-    }
-  }, []);
+  const appendHistory = useCallback(
+    async (draft: HistoryDraft) => {
+      try {
+        const entries = await store.appendHistory(stampEntry(draft));
+        setHistory(entries);
+        setHistoryError(null);
+        return true;
+      } catch (error) {
+        setHistoryError(progressErrorMessage(error));
+        return false;
+      }
+    },
+    [store],
+  );
 
   return (
-    <HistoryContext.Provider value={{ history, appendHistory }}>
+    <HistoryContext.Provider
+      value={{
+        history,
+        historyError,
+        isHistoryLoading,
+        appendHistory,
+        retryHistory,
+      }}
+    >
       {children}
     </HistoryContext.Provider>
   );

@@ -54,7 +54,8 @@ separate static export reproduces those headers at the hosting layer.
 | `src/lib/lessons.ts` | Curriculum assembly, derived metadata, lookup helpers |
 | `src/lib/keyboard.ts` | Authoritative KBDMYAN keycaps and character-to-key mapping |
 | `src/lib/syllable.ts` | Myanmar segmentation and visual typing order |
-| `src/lib/storage.ts` | Validated localStorage reads and writes |
+| `src/lib/storage.ts` | Validated localStorage reads and writes for device-local preferences (tweaks, Free Type draft) |
+| `src/lib/progress/` | Session-history schema and validation (`types.ts`), the async `ProgressStore` seam (`store.ts`), neutral store composition (`index.ts`), and the localStorage implementation (`localStore.ts`) |
 | `src/lib/wpm.ts` | Pure typing-stat calculations |
 | `src/lib/lessonStats.ts` | Pure per-lesson history roll-up (best WPM, best accuracy, attempts) for the catalogue |
 | `src/lib/themes.ts` | Theme and Myanmar-font definitions |
@@ -165,21 +166,44 @@ board scales as one piece. Adding a key means keeping its row at 15u.
 
 ## Persistence Contract
 
-`src/lib/storage.ts` owns localStorage keys:
+Two modules own persistence, split by what each kind of data has to survive.
 
-- `myantyper.history`: bounded typing-session records
+`src/lib/storage.ts` holds device-local preferences and stays synchronous on
+purpose, because theme and font must be readable before first paint and an
+async read would surface as a flash:
+
 - `myantyper.tweaks`: validated theme, font, accent, and sound preferences
 - `myantyper.free-type-draft`: a bounded Unicode draft used to cross from the
   Free Type editor at `/free` to the session route at `/free/session`
 
+`src/lib/progress/` owns `myantyper.history`, the log of completed sessions.
+History is modelled as an **append-only log**: a finished session is immutable,
+so every entry carries a stable `id` and merging two devices is a union by id
+with no conflict resolution. Entries record `completedAt` as epoch milliseconds
+and a `schemaVersion` per entry, not just per store, because once entries sync
+one log holds records written by clients on different versions. The stored
+value is an envelope, `{ version, entries }`. The app is still beta, so
+unrecognized formats read as empty and there is currently no migration or
+backward-compatibility path.
+
+Access goes through the `ProgressStore` interface, which is async even though
+the only implementation today is synchronous localStorage. IndexedDB or a
+server behind an account both are async, and callers should not change shape
+when that lands. `getProgressStore()` in `index.ts` is the neutral composition
+point.
+`HistoryProvider` holds the live cache and subscribes to the store, so
+cross-tab `storage` handling and Web Locks stay inside the store rather than
+the provider. It also exposes loading and failure state so remote errors do not
+become unhandled promise rejections.
+
 Files touching localStorage require an SSR guard. Invalid stored values fall
-back to defaults rather than breaking rendering. History reads are capped at
-200 validated records and oversized storage payloads are ignored.
-`HistoryProvider` owns the live history cache: it writes completed sessions,
-updates all same-tab consumers, and reloads on browser `storage` events from
-other tabs. Where available, browser Web Locks serialize competing history
-writes across tabs; the fallback remains a best-effort local write. The current
-release has no server sync.
+back to defaults rather than breaking rendering; a malformed entry is dropped
+individually rather than discarding the whole log. History is not truncated,
+because doing so could discard records before a future sync uploads them.
+Oversized payloads are left untouched and surfaced as an error. A future
+server should keep device-authored `completedAt` and attach authoritative sync
+metadata such as `receivedAt` separately. The current release has no server
+sync.
 
 Free Type input is capped at 5,000 Unicode code points before a session can
 start. A validated draft is saved before navigation to `/free/session`, so the

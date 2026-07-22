@@ -1,4 +1,4 @@
-import type { HistoryEntry } from "./storage";
+import type { HistoryEntry } from "./progress/types";
 
 export interface LessonStat {
   best: number;
