@@ -2,10 +2,10 @@
 
 import { cva } from "class-variance-authority";
 import { Settings, X } from "lucide-react";
-import { useState } from "react";
 import { MYANMAR_FONTS, THEMES, type ThemeId } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 import { useThemeTweaks } from "../providers/ThemeProvider";
+import { HeaderPopover } from "./HeaderPopover";
 
 const toggleButton = cva("mt-action border flex items-center justify-center", {
   variants: {
@@ -27,30 +27,33 @@ const fontChoice = cva("mt-action min-w-0 border p-2 text-left", {
 
 export function TweaksPanel() {
   const { tweaks, setTweaks } = useThemeTweaks();
-  const [open, setOpen] = useState(false);
   const accentList = THEMES[tweaks.theme].accentPresets;
 
   return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((current) => !current)}
-        aria-label={open ? "Close tweaks panel" : "Open tweaks panel"}
-        aria-expanded={open}
-        className={toggleButton({
-          active: open,
-          className: "w-10 h-10 sm:w-8 sm:h-8",
-        })}
-      >
-        <Settings size={16} />
-      </button>
-      {open && (
-        <aside className="absolute right-0 top-12 sm:top-10 w-[min(300px,calc(100vw-2rem))] mt-surface p-5 z-50 backdrop-blur-sm">
+    <HeaderPopover
+      trigger={({ open, toggle, panelId }) => (
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label={open ? "Close tweaks panel" : "Open tweaks panel"}
+          aria-expanded={open}
+          aria-controls={panelId}
+          className={toggleButton({
+            active: open,
+            className: "w-10 h-10 sm:w-8 sm:h-8",
+          })}
+        >
+          <Settings size={16} />
+        </button>
+      )}
+    >
+      {({ close }) => (
+        <>
           <header className="flex justify-between items-center mb-4">
             <div className="mt-eyebrow">Tweaks</div>
             <button
               type="button"
-              onClick={() => setOpen(false)}
+              onClick={close}
               aria-label="Close tweaks"
               className="mt-action mt-action-quiet w-6 h-6 flex items-center justify-center text-ink-soft"
             >
@@ -120,9 +123,9 @@ export function TweaksPanel() {
               onChange={(e) => setTweaks({ sound: e.target.checked })}
             />
           </Row>
-        </aside>
+        </>
       )}
-    </div>
+    </HeaderPopover>
   );
 }
 
