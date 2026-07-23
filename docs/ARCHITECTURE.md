@@ -62,7 +62,8 @@ experience but cannot provide the authentication route.
 | `src/lib/auth/` | Better Auth server configuration and browser client |
 | `src/lib/env/` | Validated server-only authentication and database configuration |
 | `src/lib/progress/` | Session-history schema and validation (`types.ts`), the async `ProgressStore` seam (`store.ts`), neutral store composition (`index.ts`), and the IndexedDB implementation (`indexedDbStore.ts`) |
-| `src/db/` | Neon connection and Drizzle schemas for authentication and the pending server history mirror |
+| `src/db/` | Neon connection and Drizzle schemas for authentication and the server history mirror |
+| `src/lib/sync/` | Authenticated history transport contracts, validation, and Drizzle repository |
 | `src/lib/wpm.ts` | Pure typing-stat calculations |
 | `src/lib/lessonStats.ts` | Pure per-lesson history roll-up (best WPM, best accuracy, attempts) for the catalogue |
 | `src/lib/themes.ts` | Theme and Myanmar-font definitions |
@@ -212,10 +213,12 @@ do not become unhandled promise rejections.
 Browser storage access remains behind client-only effects. Invalid session
 records are dropped individually rather than breaking the whole history. There
 is no application-level history cap. The server `history` table mirrors
-immutable client entries and reserves a monotonic pull cursor, but no API or
-sync process uses it yet. A future server should keep device-authored
-`completedAt` and attach authoritative sync metadata such as `receivedAt`
-separately. The current release has no server sync.
+immutable client entries and uses its server-authored monotonic `seq` as an
+opaque pull cursor. The authenticated `/api/sync/history` transport can upload
+bounded batches idempotently and pull bounded pages for the current user. It
+keeps device-authored `completedAt` separate from server-authored `createdAt`.
+The browser store does not call this API yet, so the current release still has
+no automatic server sync.
 
 ## Authentication Contract
 
@@ -232,9 +235,11 @@ not require account infrastructure. The browser derives login state through the
 Better Auth client and never receives those secrets.
 
 Authentication does not change the progress persistence contract in this
-phase. Completing a lesson still writes to IndexedDB only. A later sync layer
-will compose account-scoped local data, the outbox, and remote progress without
-putting the network in the typing completion path.
+phase. Completing a lesson still writes to IndexedDB only. The sync API derives
+ownership from the validated Better Auth session and never accepts a client
+owner ID. A later browser sync layer will compose account-scoped local data,
+the outbox, and remote progress without putting the network in the typing
+completion path.
 
 Free Type input is capped at 5,000 Unicode code points before a session can
 start. A validated draft is saved before navigation to `/free/session`, so the
@@ -329,6 +334,7 @@ viewport through these layout rules:
 | `/myanmar-unicode` | Unicode reference |
 | `/about` | Project information |
 | `/api/auth/[...all]` | Better Auth API for Google sign-in and account sessions |
+| `/api/sync/history` | Authenticated, paginated push and pull transport for immutable history entries |
 
 ## Verification
 
