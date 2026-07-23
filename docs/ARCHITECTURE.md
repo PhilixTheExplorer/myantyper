@@ -14,14 +14,16 @@ statically generated:
 - TypeScript 6 in strict mode
 - Tailwind CSS 4 with project design tokens
 - Vitest 4, Biome 2, and Lefthook 2 for local and CI verification
-- The current release requires no account and has no backend, analytics, or
-  remote persistence
+- Optional Google authentication through Better Auth, Neon Postgres, and
+  Drizzle ORM; local practice still requires no account
+- No analytics or remote progress persistence
 - Browser IndexedDB for session history and `localStorage` for visual preferences
 - WebAudio synthesis for feedback; no audio files
 
 Practice pages are generated from the finite curriculum at build time. The
-standard deployment uses Next.js to serve the configured response headers; a
-separate static export reproduces those headers at the hosting layer.
+standard deployment uses a Next.js server to handle authentication and serve
+the configured response headers. A static export can preserve the signed-out
+experience but cannot provide the authentication route.
 
 ## Architectural Principles
 
@@ -46,7 +48,9 @@ separate static export reproduces those headers at the hosting layer.
 | Path | Responsibility |
 |---|---|
 | `src/app/` | Routes, metadata, static parameter generation, page composition |
+| `src/app/api/auth/[...all]/` | Better Auth request handler running on the Node.js runtime |
 | `src/components/` | Grouped by role: `layout/` (app chrome + tweaks), `providers/` (theme and history contexts), `ui/` (shared presentation primitives), `keyboard/` (on-screen board), and one folder per feature (`home/`, `lessons/`, `history/`, `free/`, `typing/`). A component used by a single feature lives in that feature's folder; only multi-consumer primitives live in `ui/` |
+| `src/components/account/` | Optional sign-in and account-session controls |
 | `src/components/typing/` | Practice-session feature slice with a public `index.ts` barrel and three internal layers: `engine/` (pure matching state machine, immutable target prep, shared types), `hooks/` (the thin `useTypingSession` adapter plus focused input/timer/audio/flash/persistence hooks), and `view/` (coordinator plus separated header/practice/completion presentation) |
 | `src/components/providers/HistoryProvider.tsx` | In-memory history cache, same-tab updates, and cross-context refresh handling |
 | `src/components/typing/hooks/useActiveTimer.ts` | Route-local elapsed-time lifecycle that excludes paused intervals |
@@ -55,7 +59,10 @@ separate static export reproduces those headers at the hosting layer.
 | `src/lib/keyboard.ts` | Authoritative KBDMYAN keycaps and character-to-key mapping |
 | `src/lib/syllable.ts` | Myanmar segmentation and visual typing order |
 | `src/lib/storage.ts` | Validated localStorage reads and writes for device-local preferences (tweaks, Free Type draft) |
+| `src/lib/auth/` | Better Auth server configuration and browser client |
+| `src/lib/env/` | Validated server-only authentication and database configuration |
 | `src/lib/progress/` | Session-history schema and validation (`types.ts`), the async `ProgressStore` seam (`store.ts`), neutral store composition (`index.ts`), and the IndexedDB implementation (`indexedDbStore.ts`) |
+| `src/db/` | Neon connection and Drizzle schema for authentication records |
 | `src/lib/wpm.ts` | Pure typing-stat calculations |
 | `src/lib/lessonStats.ts` | Pure per-lesson history roll-up (best WPM, best accuracy, attempts) for the catalogue |
 | `src/lib/themes.ts` | Theme and Myanmar-font definitions |
@@ -208,6 +215,25 @@ is no application-level history cap. A future server should keep
 device-authored `completedAt` and attach authoritative sync metadata such as
 `receivedAt` separately. The current release has no server sync.
 
+## Authentication Contract
+
+Accounts are optional and use Google OAuth only. Better Auth exposes its handler
+at `/api/auth/[...all]` and persists its `user`, `session`, `account`, and
+`verification` records through Drizzle. Google is the only enabled sign-in
+method. The verification table remains part of Better Auth's core schema even
+though the current provider does not use it for sign-in.
+
+Database credentials, OAuth credentials, the application origin, and the auth
+secret are server-only environment variables. They are validated when the auth
+handler or database is first used so builds and signed-out local development do
+not require account infrastructure. The browser derives login state through the
+Better Auth client and never receives those secrets.
+
+Authentication does not change the progress persistence contract in this
+phase. Completing a lesson still writes to IndexedDB only. A later sync layer
+will compose account-scoped local data, the outbox, and remote progress without
+putting the network in the typing completion path.
+
 Free Type input is capped at 5,000 Unicode code points before a session can
 start. A validated draft is saved before navigation to `/free/session`, so the
 session can survive a refresh and return naturally to `/free` for editing.
@@ -300,6 +326,7 @@ viewport through these layout rules:
 | `/myanmar-keyboard` | Keyboard reference |
 | `/myanmar-unicode` | Unicode reference |
 | `/about` | Project information |
+| `/api/auth/[...all]` | Better Auth API for Google sign-in and account sessions |
 
 ## Verification
 
@@ -321,8 +348,8 @@ mobile widths, together with browser errors.
 
 ## Current Release Boundaries
 
-- No backend or API layer in the current release
-- No required account or authentication flow
+- The backend and API layer are limited to optional authentication
+- No account is required for lessons, Free Type, history, or preferences
 - No analytics, advertising, or behavioral tracking
 - No global state library until cross-route state genuinely requires one
 - No remote progress synchronization in the current release
@@ -331,8 +358,9 @@ mobile widths, together with browser errors.
 
 ## Future Constraints
 
-MyanTyper may add optional accounts, progress synchronization, and game-based
-practice. Any such additions preserve the local-first learning path:
+MyanTyper may add progress synchronization and game-based practice. Optional
+accounts already preserve the local-first learning path, and future additions
+must keep that contract:
 
 - Core lessons, Free Type, and local practice remain available without an
   account.

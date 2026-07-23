@@ -7,6 +7,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { AccountControl } from "../account/AccountControl";
 import { TweaksPanel } from "./TweaksPanel";
 
 const ITEMS = [
@@ -95,6 +96,7 @@ export function AppHeader() {
           onClick={toggleFullscreen}
         />
         <TweaksPanel />
+        <AccountControl />
       </nav>
       <div className="flex sm:hidden gap-1">
         <FullscreenButton
@@ -102,6 +104,7 @@ export function AppHeader() {
           onClick={toggleFullscreen}
         />
         <TweaksPanel />
+        <AccountControl compact />
         <button
           type="button"
           onClick={() => setMobileMenuOpen((open) => !open)}

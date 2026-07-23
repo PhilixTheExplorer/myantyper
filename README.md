@@ -28,8 +28,9 @@ Windows **Myanmar (Visual order)** keyboard (`KBDMYAN`). It turns Myanmar
 Unicode’s multi-code-point syllables and visual input order into a clear
 physical-key learning path—from finger placement to fluent sentences.
 
-No ads. No tracking. No account required. Your preferences and practice history
-stay in the browser.
+No ads. No tracking. No account required. An optional Google account is
+available, while preferences and practice history continue to stay in the
+browser during this authentication phase.
 
 ## Why MyanTyper
 
@@ -81,9 +82,9 @@ contributors can understand, test, and extend one area at a time.
 - **Data-driven curriculum.** Typed curriculum modules generate the catalogue,
   practice routes, navigation, and sitemap. Tests enforce unique lesson IDs,
   introduction order, valid key mappings, and complete keyboard coverage.
-- **Local persistence.** Browser data is validated, size-bounded,
-  SSR-safe, and synchronized across tabs without requiring a backend or global
-  state library.
+- **Local persistence.** Browser data is validated, SSR-safe, and synchronized
+  across tabs. Practice remains fully usable without an account or network
+  connection.
 - **Browser security.** Production responses include Content
   Security Policy, restrictive browser permissions, HSTS, clickjacking
   protection, and related headers.
@@ -99,6 +100,8 @@ The deeper runtime contracts and design decisions are documented in
 - Next.js 16 App Router and React 19
 - TypeScript 6 in strict mode
 - Tailwind CSS 4 with semantic design tokens
+- Better Auth with Google OAuth
+- Neon Postgres with Drizzle ORM
 - Vitest 4 and Biome 2
 - pnpm, Lefthook 2, and GitHub Actions
 
@@ -118,6 +121,23 @@ pnpm dev
 
 Open <http://localhost:3000>.
 
+The local typing experience needs no environment variables. To enable optional
+Google sign-in:
+
+1. Create a free Neon Postgres database.
+2. Create Google OAuth web credentials with
+   `http://localhost:3000/api/auth/callback/google` as a local authorized
+   redirect URI. Use `https://your-domain.example/api/auth/callback/google` in
+   production.
+3. Copy `.env.example` to `.env.local`, fill in the database and Google
+   credentials, and generate a random `BETTER_AUTH_SECRET` of at least 32
+   characters.
+4. Run `pnpm db:migrate`, then restart `pnpm dev`.
+
+`BETTER_AUTH_URL` must be the app origin, such as `http://localhost:3000` or the
+production origin. Authentication currently creates account and login-session
+records only. Cross-device practice-history sync is a separate phase.
+
 ## Commands
 
 | Command | Purpose |
@@ -127,6 +147,9 @@ Open <http://localhost:3000>.
 | `pnpm test` | Run the Vitest suite |
 | `pnpm build` | Create a production build and type-check the app |
 | `pnpm format` | Apply Biome formatting |
+| `pnpm db:generate` | Generate a Drizzle migration from the schema |
+| `pnpm db:migrate` | Apply pending Drizzle migrations |
+| `pnpm db:check` | Check the generated migration history |
 
 ## Project structure
 
@@ -134,8 +157,9 @@ Open <http://localhost:3000>.
 src/app/                 Routes, metadata, and page composition
 src/components/          Feature UI, providers, and shared primitives
 src/components/typing/   Pure engine, browser adapters, and session views
+src/db/                  Neon connection and Drizzle schemas
 src/lib/curriculum/      Reviewed lesson data organized by track
-src/lib/                 Keyboard, Unicode, storage, and statistics logic
+src/lib/                 Auth, keyboard, Unicode, storage, and statistics logic
 src/styles/              Theme tokens, fonts, and global styles
 docs/                    Architecture, curriculum, and provenance records
 ```
