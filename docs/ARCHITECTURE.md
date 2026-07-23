@@ -14,14 +14,16 @@ statically generated:
 - TypeScript 6 in strict mode
 - Tailwind CSS 4 with project design tokens
 - Vitest 4, Biome 2, and Lefthook 2 for local and CI verification
-- The current release requires no account and has no backend, analytics, or
-  remote persistence
-- Browser `localStorage` for session history and visual preferences
+- Optional Google authentication through Better Auth, Neon Postgres, and
+  Drizzle ORM; local practice still requires no account
+- No analytics or remote progress persistence
+- Browser IndexedDB for session history and `localStorage` for visual preferences
 - WebAudio synthesis for feedback; no audio files
 
 Practice pages are generated from the finite curriculum at build time. The
-standard deployment uses Next.js to serve the configured response headers; a
-separate static export reproduces those headers at the hosting layer.
+standard deployment uses a Next.js server to handle authentication and serve
+the configured response headers. A static export can preserve the signed-out
+experience but cannot provide the authentication route.
 
 ## Architectural Principles
 
@@ -35,8 +37,8 @@ separate static export reproduces those headers at the hosting layer.
    Shift state, not the operating system's emitted `event.key`.
 5. **Display order and typing order are separate.** Myanmar text remains normal
    Unicode for display; visual keyboard order is derived for keystroke matching.
-6. **Persistence stays local and bounded.** Storage access is isolated and
-   validated.
+6. **Persistence stays local and validated.** Storage access is isolated behind
+   explicit contracts.
 7. **Browser capabilities default closed.** Production responses set a content
    security policy and deny unused browser permissions, framing, and MIME
    sniffing.
@@ -46,16 +48,22 @@ separate static export reproduces those headers at the hosting layer.
 | Path | Responsibility |
 |---|---|
 | `src/app/` | Routes, metadata, static parameter generation, page composition |
+| `src/app/api/auth/[...all]/` | Better Auth request handler running on the Node.js runtime |
 | `src/components/` | Grouped by role: `layout/` (app chrome + tweaks), `providers/` (theme and history contexts), `ui/` (shared presentation primitives), `keyboard/` (on-screen board), and one folder per feature (`home/`, `lessons/`, `history/`, `free/`, `typing/`). A component used by a single feature lives in that feature's folder; only multi-consumer primitives live in `ui/` |
+| `src/components/account/` | Optional sign-in and account-session controls |
 | `src/components/typing/` | Practice-session feature slice with a public `index.ts` barrel and three internal layers: `engine/` (pure matching state machine, immutable target prep, shared types), `hooks/` (the thin `useTypingSession` adapter plus focused input/timer/audio/flash/persistence hooks), and `view/` (coordinator plus separated header/practice/completion presentation) |
-| `src/components/providers/HistoryProvider.tsx` | In-memory history cache, same-tab updates, and cross-tab storage synchronization |
+| `src/components/providers/HistoryProvider.tsx` | In-memory history cache, same-tab updates, and cross-context refresh handling |
 | `src/components/typing/hooks/useActiveTimer.ts` | Route-local elapsed-time lifecycle that excludes paused intervals |
 | `src/lib/curriculum/` | Per-track folders containing small unit modules and reviewed lesson content |
 | `src/lib/lessons.ts` | Curriculum assembly, derived metadata, lookup helpers |
 | `src/lib/keyboard.ts` | Authoritative KBDMYAN keycaps and character-to-key mapping |
 | `src/lib/syllable.ts` | Myanmar segmentation and visual typing order |
 | `src/lib/storage.ts` | Validated localStorage reads and writes for device-local preferences (tweaks, Free Type draft) |
-| `src/lib/progress/` | Session-history schema and validation (`types.ts`), the async `ProgressStore` seam (`store.ts`), neutral store composition (`index.ts`), and the localStorage implementation (`localStore.ts`) |
+| `src/lib/auth/` | Better Auth server configuration and browser client |
+| `src/lib/env/` | Validated server-only authentication and database configuration |
+| `src/lib/progress/` | Session-history schema and validation (`types.ts`), the async `ProgressStore` seam (`store.ts`), neutral store composition (`index.ts`), and the IndexedDB implementation (`indexedDbStore.ts`) |
+| `src/db/` | Neon connection and Drizzle schemas for authentication and the server history mirror |
+| `src/lib/sync/` | Authenticated history transport, database repository, and local-first browser sync coordinator |
 | `src/lib/wpm.ts` | Pure typing-stat calculations |
 | `src/lib/lessonStats.ts` | Pure per-lesson history roll-up (best WPM, best accuracy, attempts) for the catalogue |
 | `src/lib/themes.ts` | Theme and Myanmar-font definitions |
@@ -176,34 +184,70 @@ async read would surface as a flash:
 - `myantyper.free-type-draft`: a bounded Unicode draft used to cross from the
   Free Type editor at `/free` to the session route at `/free/session`
 
-`src/lib/progress/` owns `myantyper.history`, the log of completed sessions.
+`src/lib/progress/` owns the `myantyper-progress` IndexedDB database and its log
+of completed sessions.
 History is modelled as an **append-only log**: a finished session is immutable,
 so every entry carries a stable `id` and merging two devices is a union by id
 with no conflict resolution. Entries record `completedAt` as epoch milliseconds
 and a `schemaVersion` per entry, not just per store, because once entries sync
-one log holds records written by clients on different versions. The stored
-value is an envelope, `{ version, entries }`. The app is still beta, so
-unrecognized formats read as empty and there is currently no migration or
-backward-compatibility path.
+one log holds records written by clients on different versions.
 
-Access goes through the `ProgressStore` interface, which is async even though
-the only implementation today is synchronous localStorage. IndexedDB or a
-server behind an account both are async, and callers should not change shape
-when that lands. `getProgressStore()` in `index.ts` is the neutral composition
-point.
+The database starts with three object stores:
+
+- `sessions`: immutable records keyed by local scope and session ID, with
+  indexes for scope, completion time, and lesson ID
+- `outbox`: pending account-scoped uploads, keyed by user and session ID
+- `syncMetadata`: each account's remote pull cursor and last sync time
+
+Signed-out history uses the `anonymous` scope. Signed-in history uses an
+account-specific scope, with pending uploads in `outbox` and a per-account
+remote cursor in `syncMetadata`. Signing in copies unsynced anonymous history
+into the account scope without deleting the anonymous records.
+
+Access goes through the async `ProgressStore` interface. `getProgressStore()`
+in `index.ts` is the neutral composition point for anonymous and
+account-scoped IndexedDB stores.
 `HistoryProvider` holds the live cache and subscribes to the store, so
-cross-tab `storage` handling and Web Locks stay inside the store rather than
-the provider. It also exposes loading and failure state so remote errors do not
-become unhandled promise rejections.
+cross-context `BroadcastChannel` handling stays inside the store rather than
+the provider. It also exposes loading and failure state so persistence errors
+do not become unhandled promise rejections.
 
-Files touching localStorage require an SSR guard. Invalid stored values fall
-back to defaults rather than breaking rendering; a malformed entry is dropped
-individually rather than discarding the whole log. History is not truncated,
-because doing so could discard records before a future sync uploads them.
-Oversized payloads are left untouched and surfaced as an error. A future
-server should keep device-authored `completedAt` and attach authoritative sync
-metadata such as `receivedAt` separately. The current release has no server
-sync.
+Browser storage access remains behind client-only effects. Invalid session
+records are dropped individually rather than breaking the whole history. There
+is no application-level history cap. The server `history` table mirrors
+immutable client entries and uses its server-authored monotonic `seq` as an
+opaque pull cursor. The authenticated `/api/sync/history` transport can upload
+bounded batches idempotently and pull bounded pages for the current user. It
+keeps device-authored `completedAt` separate from server-authored `createdAt`.
+The browser sync coordinator uploads the outbox before pulling remote pages.
+Remote entries merge into the account scope by stable entry ID, and the pull
+cursor only moves forward. Sync runs after sign-in, a signed-in completion, a
+cross-tab change, and browser reconnect. Network failure never blocks a local
+write; pending entries stay queued for a later retry.
+
+The account control reports whether history is syncing, synced, offline, or
+saved locally after a sync failure. Offline and failed states offer a manual
+retry. This status describes cross-device transport only; local persistence
+errors remain part of the history view's existing error state.
+
+## Authentication Contract
+
+Accounts are optional and use Google OAuth only. Better Auth exposes its handler
+at `/api/auth/[...all]` and persists its `user`, `session`, `account`, and
+`verification` records through Drizzle. Google is the only enabled sign-in
+method. The verification table remains part of Better Auth's core schema even
+though the current provider does not use it for sign-in.
+
+Database credentials, OAuth credentials, the application origin, and the auth
+secret are server-only environment variables. They are validated when the auth
+handler or database is first used so builds and signed-out local development do
+not require account infrastructure. The browser derives login state through the
+Better Auth client and never receives those secrets.
+
+Authentication selects an account-specific IndexedDB scope. A completed lesson
+is committed locally together with its outbox record before background sync is
+started. The sync API derives ownership from the validated Better Auth session
+and never accepts a client owner ID.
 
 Free Type input is capped at 5,000 Unicode code points before a session can
 start. A validated draft is saved before navigation to `/free/session`, so the
@@ -297,6 +341,8 @@ viewport through these layout rules:
 | `/myanmar-keyboard` | Keyboard reference |
 | `/myanmar-unicode` | Unicode reference |
 | `/about` | Project information |
+| `/api/auth/[...all]` | Better Auth API for Google sign-in and account sessions |
+| `/api/sync/history` | Authenticated, paginated push and pull transport for immutable history entries |
 
 ## Verification
 
@@ -318,22 +364,24 @@ mobile widths, together with browser errors.
 
 ## Current Release Boundaries
 
-- No backend or API layer in the current release
-- No required account or authentication flow
+- Accounts and cross-device history sync are optional
+- No account is required for lessons, Free Type, history, or preferences
+- Remote sync is limited to completed session history; preferences and Free
+  Type drafts remain device-local
 - No analytics, advertising, or behavioral tracking
 - No global state library until cross-route state genuinely requires one
-- No remote progress synchronization in the current release
 - No content management system while typed local curriculum modules remain
   maintainable
 
 ## Future Constraints
 
-MyanTyper may add optional accounts, progress synchronization, and game-based
-practice. Any such additions preserve the local-first learning path:
+MyanTyper may expand synchronized progress data and add game-based practice.
+Optional accounts already preserve the local-first learning path, and future
+additions must keep that contract:
 
 - Core lessons, Free Type, and local practice remain available without an
   account.
-- Synchronization is opt-in and never uploads existing local data silently.
+- Signing in opts the learner into synchronizing existing local history.
 - Account removal includes export and deletion of synchronized learner data.
 - Storage migrations and conflict handling are explicit and versioned.
 - Game features reuse the keyboard, curriculum, and typing-engine contracts
