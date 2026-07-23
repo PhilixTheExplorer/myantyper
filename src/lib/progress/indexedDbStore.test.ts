@@ -2,6 +2,7 @@ import "fake-indexeddb/auto";
 import { deleteDB } from "idb";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  createAccountProgressStore,
   createIndexedDbProgressStore,
   type IndexedDbProgressStore,
   type ProgressChannel,
@@ -68,12 +69,14 @@ describe("indexedDbProgressStore", () => {
   let databaseName: string;
   let stores: IndexedDbProgressStore[];
 
-  const createStore = (scope = "anonymous") => {
-    const store = createIndexedDbProgressStore({
+  const createStore = (userId?: string) => {
+    const options = {
       databaseName,
-      scope,
-      channelFactory: (name) => new TestChannel(name),
-    });
+      channelFactory: (name: string) => new TestChannel(name),
+    };
+    const store = userId
+      ? createAccountProgressStore(userId, options)
+      : createIndexedDbProgressStore(options);
     stores.push(store);
     return store;
   };
@@ -130,6 +133,66 @@ describe("indexedDbProgressStore", () => {
     expect((await account.listHistory()).map((item) => item.id)).toEqual([
       "account-session",
     ]);
+  });
+
+  it("imports anonymous history once and queues it for the account", async () => {
+    const anonymous = createStore();
+    const account = createAccountProgressStore("user-1", {
+      databaseName,
+      channelFactory: (name) => new TestChannel(name),
+    });
+    stores.push(account);
+    await anonymous.appendHistory(entry({ id: "local-session" }));
+
+    expect(await account.importAnonymousHistory()).toEqual([
+      entry({ id: "local-session" }),
+    ]);
+    expect(await account.importAnonymousHistory()).toEqual([]);
+    expect(await account.listPendingUploads(100)).toEqual([
+      entry({ id: "local-session" }),
+    ]);
+  });
+
+  it("queues new account history until the server acknowledges it", async () => {
+    const account = createAccountProgressStore("user-1", {
+      databaseName,
+      channelFactory: (name) => new TestChannel(name),
+    });
+    stores.push(account);
+    await account.appendHistory(entry());
+    await account.appendHistory(entry({ wpm: 99 }));
+
+    expect(await account.listPendingUploads(100)).toEqual([entry()]);
+    await account.acknowledgeUploads(["session-1"]);
+    expect(await account.listPendingUploads(100)).toEqual([]);
+  });
+
+  it("merges remote history without requeueing or regressing its cursor", async () => {
+    const account = createAccountProgressStore("user-1", {
+      databaseName,
+      channelFactory: (name) => new TestChannel(name),
+    });
+    stores.push(account);
+    await account.appendHistory(entry({ id: "same", wpm: 32 }));
+    await account.acknowledgeUploads(["same"]);
+
+    await account.mergeRemoteHistory(
+      [
+        entry({ id: "same", wpm: 99 }),
+        entry({ id: "remote", completedAt: Date.UTC(2026, 6, 20) }),
+      ],
+      "12",
+    );
+    await account.mergeRemoteHistory([], "7");
+
+    expect(
+      (await account.listHistory()).map(({ id, wpm }) => ({ id, wpm })),
+    ).toEqual([
+      { id: "remote", wpm: 32 },
+      { id: "same", wpm: 32 },
+    ]);
+    expect(await account.listPendingUploads(100)).toEqual([]);
+    expect(await account.getPullCursor()).toBe("12");
   });
 
   it("notifies another store in the same scope after an append", async () => {

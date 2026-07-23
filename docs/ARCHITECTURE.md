@@ -63,7 +63,7 @@ experience but cannot provide the authentication route.
 | `src/lib/env/` | Validated server-only authentication and database configuration |
 | `src/lib/progress/` | Session-history schema and validation (`types.ts`), the async `ProgressStore` seam (`store.ts`), neutral store composition (`index.ts`), and the IndexedDB implementation (`indexedDbStore.ts`) |
 | `src/db/` | Neon connection and Drizzle schemas for authentication and the server history mirror |
-| `src/lib/sync/` | Authenticated history transport contracts, validation, and Drizzle repository |
+| `src/lib/sync/` | Authenticated history transport, database repository, and local-first browser sync coordinator |
 | `src/lib/wpm.ts` | Pure typing-stat calculations |
 | `src/lib/lessonStats.ts` | Pure per-lesson history roll-up (best WPM, best accuracy, attempts) for the catalogue |
 | `src/lib/themes.ts` | Theme and Myanmar-font definitions |
@@ -199,8 +199,10 @@ The database starts with three object stores:
 - `outbox`: reserved for account-scoped uploads in the sync phase
 - `syncMetadata`: reserved for each account's remote pull cursor and sync time
 
-The current store uses the `anonymous` scope. Account-specific scopes and the
-reserved sync stores do not affect signed-out behavior.
+Signed-out history uses the `anonymous` scope. Signed-in history uses an
+account-specific scope, with pending uploads in `outbox` and a per-account
+remote cursor in `syncMetadata`. Signing in copies unsynced anonymous history
+into the account scope without deleting the anonymous records.
 
 Access goes through the async `ProgressStore` interface. `getProgressStore()`
 in `index.ts` is the neutral composition point for the current IndexedDB store
@@ -217,8 +219,11 @@ immutable client entries and uses its server-authored monotonic `seq` as an
 opaque pull cursor. The authenticated `/api/sync/history` transport can upload
 bounded batches idempotently and pull bounded pages for the current user. It
 keeps device-authored `completedAt` separate from server-authored `createdAt`.
-The browser store does not call this API yet, so the current release still has
-no automatic server sync.
+The browser sync coordinator uploads the outbox before pulling remote pages.
+Remote entries merge into the account scope by stable entry ID, and the pull
+cursor only moves forward. Sync runs after sign-in, a signed-in completion, a
+cross-tab change, and browser reconnect. Network failure never blocks a local
+write; pending entries stay queued for a later retry.
 
 ## Authentication Contract
 
@@ -234,12 +239,10 @@ handler or database is first used so builds and signed-out local development do
 not require account infrastructure. The browser derives login state through the
 Better Auth client and never receives those secrets.
 
-Authentication does not change the progress persistence contract in this
-phase. Completing a lesson still writes to IndexedDB only. The sync API derives
-ownership from the validated Better Auth session and never accepts a client
-owner ID. A later browser sync layer will compose account-scoped local data,
-the outbox, and remote progress without putting the network in the typing
-completion path.
+Authentication selects an account-specific IndexedDB scope. A completed lesson
+is committed locally together with its outbox record before background sync is
+started. The sync API derives ownership from the validated Better Auth session
+and never accepts a client owner ID.
 
 Free Type input is capped at 5,000 Unicode code points before a session can
 start. A validated draft is saved before navigation to `/free/session`, so the
@@ -356,7 +359,7 @@ mobile widths, together with browser errors.
 
 ## Current Release Boundaries
 
-- The backend and API layer are limited to optional authentication
+- Accounts and cross-device history sync are optional
 - No account is required for lessons, Free Type, history, or preferences
 - No analytics, advertising, or behavioral tracking
 - No global state library until cross-route state genuinely requires one
@@ -372,7 +375,7 @@ must keep that contract:
 
 - Core lessons, Free Type, and local practice remain available without an
   account.
-- Synchronization is opt-in and never uploads existing local data silently.
+- Signing in opts the learner into synchronizing existing local history.
 - Account removal includes export and deletion of synchronized learner data.
 - Storage migrations and conflict handling are explicit and versioned.
 - Game features reuse the keyboard, curriculum, and typing-engine contracts
