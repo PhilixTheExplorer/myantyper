@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { authClient } from "@/lib/auth/client";
@@ -22,9 +23,18 @@ interface HistoryContextValue {
   history: HistoryEntry[];
   historyError: string | null;
   isHistoryLoading: boolean;
+  syncStatus: HistorySyncStatus;
   appendHistory: (draft: HistoryDraft) => Promise<boolean>;
   retryHistory: () => void;
+  retrySync: () => void;
 }
+
+export type HistorySyncStatus =
+  | "local"
+  | "syncing"
+  | "synced"
+  | "offline"
+  | "error";
 
 const HistoryContext = createContext<HistoryContextValue | null>(null);
 
@@ -41,7 +51,9 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [isHistoryLoading, setIsHistoryLoading] = useState(true);
+  const [syncStatus, setSyncStatus] = useState<HistorySyncStatus>("local");
   const [refreshVersion, setRefreshVersion] = useState(0);
+  const syncAttempt = useRef(0);
   const accountStore = useMemo(
     () => (userId ? createAccountProgressStore(userId) : null),
     [userId],
@@ -58,6 +70,37 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
       void accountStore.close();
     };
   }, [accountStore]);
+
+  const synchronize = useCallback(async () => {
+    if (!syncController) {
+      syncAttempt.current += 1;
+      setSyncStatus("local");
+      return;
+    }
+
+    const attempt = ++syncAttempt.current;
+    if (!navigator.onLine) {
+      setSyncStatus("offline");
+      return;
+    }
+
+    setSyncStatus("syncing");
+    try {
+      await syncController.synchronize();
+      if (syncAttempt.current === attempt) setSyncStatus("synced");
+    } catch {
+      if (syncAttempt.current === attempt) {
+        setSyncStatus(navigator.onLine ? "error" : "offline");
+      }
+    }
+  }, [syncController]);
+
+  useEffect(() => {
+    if (!syncController) {
+      syncAttempt.current += 1;
+      setSyncStatus("local");
+    }
+  }, [syncController]);
 
   // refreshVersion intentionally restarts this subscription after a retry.
   // biome-ignore lint/correctness/useExhaustiveDependencies: see above
@@ -81,33 +124,34 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
     };
 
     refresh();
-    const synchronize = () => {
+    const synchronizeAndRefresh = () => {
       if (!syncController) return;
-      void syncController
-        .synchronize()
-        .then(refresh)
-        .catch(() => {
-          // Local history remains available while an offline sync waits to retry.
-        });
+      void synchronize().then(refresh);
     };
     const handleStoreChange = () => {
       refresh();
-      synchronize();
+      synchronizeAndRefresh();
     };
     const unsubscribe = store.subscribe(handleStoreChange);
-    const handleOnline = () => synchronize();
+    const handleOnline = () => synchronizeAndRefresh();
+    const handleOffline = () => setSyncStatus("offline");
     window.addEventListener("online", handleOnline);
+    if (accountStore) window.addEventListener("offline", handleOffline);
 
     if (accountStore) {
+      setSyncStatus(navigator.onLine ? "syncing" : "offline");
       void accountStore
         .importAnonymousHistory()
         .then(() => {
           if (!active) return;
           refresh();
-          synchronize();
+          synchronizeAndRefresh();
         })
         .catch((error: unknown) => {
-          if (active) setHistoryError(progressErrorMessage(error));
+          if (active) {
+            setHistoryError(progressErrorMessage(error));
+            setSyncStatus(navigator.onLine ? "error" : "offline");
+          }
         });
     }
 
@@ -115,12 +159,24 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
       active = false;
       unsubscribe();
       window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
-  }, [accountStore, refreshVersion, store, syncController]);
+  }, [accountStore, refreshVersion, store, syncController, synchronize]);
 
   const retryHistory = useCallback(() => {
     setRefreshVersion((version) => version + 1);
   }, []);
+
+  const retrySync = useCallback(() => {
+    void synchronize().then(async () => {
+      try {
+        setHistory(await store.listHistory());
+        setHistoryError(null);
+      } catch (error) {
+        setHistoryError(progressErrorMessage(error));
+      }
+    });
+  }, [store, synchronize]);
 
   const appendHistory = useCallback(
     async (draft: HistoryDraft) => {
@@ -128,21 +184,16 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
         const entries = await store.appendHistory(stampEntry(draft));
         setHistory(entries);
         setHistoryError(null);
-        void syncController
-          ?.synchronize()
-          .then(async () => {
-            setHistory(await store.listHistory());
-          })
-          .catch(() => {
-            // The outbox keeps the local entry pending for the next retry.
-          });
+        void synchronize().then(async () => {
+          setHistory(await store.listHistory());
+        });
         return true;
       } catch (error) {
         setHistoryError(progressErrorMessage(error));
         return false;
       }
     },
-    [store, syncController],
+    [store, synchronize],
   );
 
   return (
@@ -151,8 +202,10 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
         history,
         historyError,
         isHistoryLoading,
+        syncStatus,
         appendHistory,
         retryHistory,
+        retrySync,
       }}
     >
       {children}

@@ -225,6 +225,11 @@ cursor only moves forward. Sync runs after sign-in, a signed-in completion, a
 cross-tab change, and browser reconnect. Network failure never blocks a local
 write; pending entries stay queued for a later retry.
 
+The account control reports whether history is syncing, synced, offline, or
+saved locally after a sync failure. Offline and failed states offer a manual
+retry. This status describes cross-device transport only; local persistence
+errors remain part of the history view's existing error state.
+
 ## Authentication Contract
 
 Accounts are optional and use Google OAuth only. Better Auth exposes its handler
