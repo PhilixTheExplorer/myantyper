@@ -62,7 +62,7 @@ experience but cannot provide the authentication route.
 | `src/lib/auth/` | Better Auth server configuration and browser client |
 | `src/lib/env/` | Validated server-only authentication and database configuration |
 | `src/lib/progress/` | Session-history schema and validation (`types.ts`), the async `ProgressStore` seam (`store.ts`), neutral store composition (`index.ts`), and the IndexedDB implementation (`indexedDbStore.ts`) |
-| `src/db/` | Neon connection and Drizzle schema for authentication records |
+| `src/db/` | Neon connection and Drizzle schemas for authentication and the pending server history mirror |
 | `src/lib/wpm.ts` | Pure typing-stat calculations |
 | `src/lib/lessonStats.ts` | Pure per-lesson history roll-up (best WPM, best accuracy, attempts) for the catalogue |
 | `src/lib/themes.ts` | Theme and Myanmar-font definitions |
@@ -211,9 +211,11 @@ do not become unhandled promise rejections.
 
 Browser storage access remains behind client-only effects. Invalid session
 records are dropped individually rather than breaking the whole history. There
-is no application-level history cap. A future server should keep
-device-authored `completedAt` and attach authoritative sync metadata such as
-`receivedAt` separately. The current release has no server sync.
+is no application-level history cap. The server `history` table mirrors
+immutable client entries and reserves a monotonic pull cursor, but no API or
+sync process uses it yet. A future server should keep device-authored
+`completedAt` and attach authoritative sync metadata such as `receivedAt`
+separately. The current release has no server sync.
 
 ## Authentication Contract
 

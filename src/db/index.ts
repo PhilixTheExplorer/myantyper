@@ -1,11 +1,11 @@
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { readServerEnvironment } from "@/lib/env/server";
-import { authSchema } from "./schema";
+import { schema } from "./schema";
 
 export function createDatabase(connectionString: string) {
   const client = neon(connectionString);
-  return drizzle({ client, schema: authSchema });
+  return drizzle({ client, schema });
 }
 
 let database: ReturnType<typeof createDatabase> | null = null;
