@@ -28,9 +28,9 @@ Windows **Myanmar (Visual order)** keyboard (`KBDMYAN`). It turns Myanmar
 Unicode’s multi-code-point syllables and visual input order into a clear
 physical-key learning path—from finger placement to fluent sentences.
 
-No ads. No tracking. No account required. An optional Google account is
-available, while preferences and practice history continue to stay in the
-browser during this authentication phase.
+No ads. No tracking. No account required. Practice history is always written
+to the browser first. An optional Google account adds free cross-device history
+sync while signed-out practice remains fully local.
 
 ## Why MyanTyper
 
@@ -66,6 +66,7 @@ asking learners to imitate rendered text.
   Myanmar text.
 - Free Type sessions generated from any pasted Myanmar Unicode text.
 - Local WPM, accuracy, rhythm, keystroke, and session-history feedback.
+- Optional Google sign-in for local-first, cross-device session-history sync.
 - Four visual themes and multiple bundled Myanmar fonts.
 
 ## How it is built
@@ -82,9 +83,10 @@ contributors can understand, test, and extend one area at a time.
 - **Data-driven curriculum.** Typed curriculum modules generate the catalogue,
   practice routes, navigation, and sitemap. Tests enforce unique lesson IDs,
   introduction order, valid key mappings, and complete keyboard coverage.
-- **Local persistence.** Browser data is validated, SSR-safe, and synchronized
-  across tabs. Practice remains fully usable without an account or network
-  connection.
+- **Local-first persistence.** Browser data is validated, SSR-safe, and
+  synchronized across tabs. IndexedDB remains the immediate history store;
+  signed-in history syncs to Postgres in the background. Practice remains fully
+  usable without an account or network connection.
 - **Browser security.** Production responses include Content
   Security Policy, restrictive browser permissions, HSTS, clickjacking
   protection, and related headers.
@@ -122,7 +124,7 @@ pnpm dev
 Open <http://localhost:3000>.
 
 The local typing experience needs no environment variables. To enable optional
-Google sign-in:
+Google sign-in and cross-device history sync:
 
 1. Create a free Neon Postgres database.
 2. Create Google OAuth web credentials with
@@ -135,8 +137,19 @@ Google sign-in:
 4. Run `pnpm db:migrate`, then restart `pnpm dev`.
 
 `BETTER_AUTH_URL` must be the app origin, such as `http://localhost:3000` or the
-production origin. Authentication currently creates account and login-session
-records only. Cross-device practice-history sync is a separate phase.
+production origin.
+
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | Neon Postgres connection string |
+| `BETTER_AUTH_SECRET` | Random authentication secret of at least 32 characters |
+| `BETTER_AUTH_URL` | Public origin of this deployment |
+| `GOOGLE_CLIENT_ID` | Google OAuth web client ID |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth web client secret |
+
+These values remain server-only. After the migrations are applied, Better Auth
+stores account sessions and signed-in practice history synchronizes with
+Postgres through the authenticated history API.
 
 ## Commands
 

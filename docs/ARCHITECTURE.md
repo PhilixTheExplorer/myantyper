@@ -196,8 +196,8 @@ The database starts with three object stores:
 
 - `sessions`: immutable records keyed by local scope and session ID, with
   indexes for scope, completion time, and lesson ID
-- `outbox`: reserved for account-scoped uploads in the sync phase
-- `syncMetadata`: reserved for each account's remote pull cursor and sync time
+- `outbox`: pending account-scoped uploads, keyed by user and session ID
+- `syncMetadata`: each account's remote pull cursor and last sync time
 
 Signed-out history uses the `anonymous` scope. Signed-in history uses an
 account-specific scope, with pending uploads in `outbox` and a per-account
@@ -205,8 +205,8 @@ remote cursor in `syncMetadata`. Signing in copies unsynced anonymous history
 into the account scope without deleting the anonymous records.
 
 Access goes through the async `ProgressStore` interface. `getProgressStore()`
-in `index.ts` is the neutral composition point for the current IndexedDB store
-and a future syncing store.
+in `index.ts` is the neutral composition point for anonymous and
+account-scoped IndexedDB stores.
 `HistoryProvider` holds the live cache and subscribes to the store, so
 cross-context `BroadcastChannel` handling stays inside the store rather than
 the provider. It also exposes loading and failure state so persistence errors
@@ -366,17 +366,18 @@ mobile widths, together with browser errors.
 
 - Accounts and cross-device history sync are optional
 - No account is required for lessons, Free Type, history, or preferences
+- Remote sync is limited to completed session history; preferences and Free
+  Type drafts remain device-local
 - No analytics, advertising, or behavioral tracking
 - No global state library until cross-route state genuinely requires one
-- No remote progress synchronization in the current release
 - No content management system while typed local curriculum modules remain
   maintainable
 
 ## Future Constraints
 
-MyanTyper may add progress synchronization and game-based practice. Optional
-accounts already preserve the local-first learning path, and future additions
-must keep that contract:
+MyanTyper may expand synchronized progress data and add game-based practice.
+Optional accounts already preserve the local-first learning path, and future
+additions must keep that contract:
 
 - Core lessons, Free Type, and local practice remain available without an
   account.
