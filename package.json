@@ -38,17 +38,17 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@better-auth/drizzle-adapter": "^1.6.23",
+    "@better-auth/drizzle-adapter": "^1.6.25",
     "@neondatabase/serverless": "^1.1.0",
-    "better-auth": "^1.6.23",
+    "better-auth": "^1.6.25",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
     "idb": "^8.0.3",
-    "lucide-react": "^1.24.0",
-    "next": "16.2.10",
-    "react": "19.2.7",
-    "react-dom": "19.2.7",
+    "lucide-react": "^1.26.0",
+    "next": "16.2.11",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
