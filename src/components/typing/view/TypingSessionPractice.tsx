@@ -166,57 +166,57 @@ function ParagraphPreview({
   currentLine: number;
   cursorIndex: number;
 }) {
-  const firstLine = Math.max(0, currentLine - 1);
-  const visibleLines = lines.slice(firstLine, currentLine + 2);
+  const firstLine = Math.max(0, currentLine);
+  const visibleLines = lines.slice(firstLine);
 
   return (
     <aside className="mt-surface flex min-w-0 flex-col p-4 xl:self-stretch xl:[contain:size]">
       <div className="mt-eyebrow mb-3">Paragraph</div>
       <div
         lang="my"
-        className="mt-myanmar flex min-h-0 flex-1 flex-col gap-2 overflow-hidden text-base"
+        className="mt-myanmar min-h-0 flex-1 overflow-hidden text-base"
       >
-        {visibleLines.map((line, offset) => {
-          const index = firstLine + offset;
-          const active = index === currentLine;
-          return (
-            <p
-              key={line.start}
-              className={cn(
-                "border-l-2 pl-3 leading-relaxed",
-                active ? "line-clamp-8" : "line-clamp-1",
-                active
-                  ? "border-accent text-ink"
-                  : index < currentLine
-                    ? "border-border-soft text-ink-soft"
+        <div className="line-clamp-9 space-y-2">
+          {visibleLines.map((line, offset) => {
+            const index = firstLine + offset;
+            const active = index === currentLine;
+            return (
+              <p
+                key={line.start}
+                className={cn(
+                  "border-l-2 pl-3 leading-relaxed",
+                  active
+                    ? "border-accent text-ink"
                     : "border-transparent text-ink-dim",
-              )}
-            >
-              {paragraphLineExcerpt(line, active ? cursorIndex : undefined)}
-            </p>
-          );
-        })}
+                )}
+              >
+                {active
+                  ? paragraphLineExcerpt(line, cursorIndex)
+                  : line.text || "\u00a0"}
+              </p>
+            );
+          })}
+        </div>
       </div>
     </aside>
   );
 }
 
-const PARAGRAPH_CHUNK_STEP = 80;
-const PARAGRAPH_CHUNK_SIZE = 120;
-const PARAGRAPH_CONTEXT_SIZE = 24;
+const PARAGRAPH_CHUNK_STEP = 160;
+const PARAGRAPH_CHUNK_SIZE = 240;
 
 function paragraphLineExcerpt(
   line: ParagraphLine,
-  cursorIndex?: number,
+  cursorIndex: number,
 ): string {
   if (!line.text) return "\u00a0";
 
   const chars = Array.from(line.text);
   const syllables = segmentSyllables(chars);
-  const relativeCursor =
-    cursorIndex === undefined
-      ? 0
-      : Math.max(0, Math.min(chars.length, cursorIndex - line.start));
+  const relativeCursor = Math.max(
+    0,
+    Math.min(chars.length, cursorIndex - line.start),
+  );
   const matchingSyllable = syllables.findIndex(
     ([, end]) => relativeCursor < end,
   );
@@ -224,14 +224,11 @@ function paragraphLineExcerpt(
     matchingSyllable === -1
       ? Math.max(0, syllables.length - 1)
       : matchingSyllable;
-  const chunkStep =
-    cursorIndex === undefined ? PARAGRAPH_CONTEXT_SIZE : PARAGRAPH_CHUNK_STEP;
-  const chunkSize =
-    cursorIndex === undefined ? PARAGRAPH_CONTEXT_SIZE : PARAGRAPH_CHUNK_SIZE;
-  const firstSyllable = Math.floor(activeSyllable / chunkStep) * chunkStep;
+  const firstSyllable =
+    Math.floor(activeSyllable / PARAGRAPH_CHUNK_STEP) * PARAGRAPH_CHUNK_STEP;
   const visibleSyllables = syllables.slice(
     firstSyllable,
-    firstSyllable + chunkSize,
+    firstSyllable + PARAGRAPH_CHUNK_SIZE,
   );
   const start = visibleSyllables[0]?.[0] ?? 0;
   const end = visibleSyllables.at(-1)?.[1] ?? chars.length;

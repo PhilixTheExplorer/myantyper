@@ -40,6 +40,10 @@ export function FreeTypeEntry() {
     <div>
       <textarea
         value={text}
+        wrap="soft"
+        spellCheck={false}
+        autoCorrect="off"
+        autoCapitalize="none"
         onChange={(e) => {
           const nextText = e.target.value;
           setText(nextText);
@@ -47,7 +51,7 @@ export function FreeTypeEntry() {
         }}
         aria-describedby="free-type-status"
         lang="my"
-        className="w-full min-h-45 sm:min-h-55 p-5 mt-surface mt-myanmar text-xl sm:text-2xl leading-snug outline-none resize-y"
+        className="w-full min-h-45 overflow-x-hidden p-5 mt-surface mt-myanmar text-xl leading-snug [overflow-wrap:anywhere] outline-none resize-y sm:min-h-55 sm:text-2xl"
         style={{ background: "var(--mt-surface)" }}
       />
       {!text.trim() && (
