@@ -26,7 +26,13 @@ export default function HomePage() {
           applicationCategory: "EducationalApplication",
           operatingSystem: "Any (web browser)",
           description:
-            "Free, open-source touch-typing tutor for the Windows Myanmar (Visual order) keyboard. No ads. No tracking. No account required.",
+            "Free, open-source Burmese typing practice, progressive Myanmar Unicode lessons, and a typing speed and accuracy test for the Windows Myanmar (Visual order) keyboard.",
+          featureList: [
+            "Burmese typing practice",
+            "Myanmar Unicode typing lessons",
+            "Typing speed and accuracy test",
+            "Windows Myanmar Visual-order keyboard guide",
+          ],
           inLanguage: ["en", "my"],
           isAccessibleForFree: true,
           license: "https://www.gnu.org/licenses/agpl-3.0.html",
@@ -60,11 +66,10 @@ export default function HomePage() {
             with confidence.
           </h1>
           <p className="mt-5 max-w-150 text-sm leading-relaxed text-ink-soft">
-            Build real muscle memory for the Windows Myanmar keyboard, from your
-            first key positions to fluent original sentences. Every mark,
-            medial, and shifted key is taught in a clear skill-based
-            progression, with private practice that stays entirely in your
-            browser.
+            MyanTyper is a free, open-source Burmese typing practice tool for
+            the Windows Myanmar keyboard. Build real muscle memory from your
+            first key positions to fluent original sentences, with progressive
+            Myanmar Unicode lessons and local-first history.
           </p>
           <p
             lang="my"
@@ -84,7 +89,7 @@ export default function HomePage() {
               href="/free"
               className="mt-action mt-action-outline inline-flex items-center px-4 py-2 text-xs tracking-widest uppercase border border-border-soft text-ink"
             >
-              Free type
+              Free typing test
             </Link>
             <Link
               href="/myanmar-keyboard"

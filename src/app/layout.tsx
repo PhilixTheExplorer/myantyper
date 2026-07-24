@@ -48,11 +48,11 @@ const jetBrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "MyanTyper: Myanmar Unicode touch typing",
+    default: "MyanTyper: Free Open-Source Burmese Typing Practice",
     template: "%s · MyanTyper",
   },
   description:
-    "Free, open-source touch-typing tutor for the Windows Myanmar (Visual order) keyboard. No ads. No tracking. No account required.",
+    "Free, open-source Burmese typing practice and Myanmar Unicode lessons. Test speed and accuracy on the Windows Myanmar keyboard—no ads, tracking, or required account.",
   applicationName: SITE_NAME,
   manifest: "/site.webmanifest",
   alternates: { canonical: "/" },
@@ -60,15 +60,15 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     type: "website",
     url: "/",
-    title: "MyanTyper: Myanmar Unicode touch typing",
+    title: "MyanTyper: Free Open-Source Burmese Typing Practice",
     description:
-      "Free, open-source touch-typing tutor for the Windows Myanmar (Visual order) keyboard.",
+      "Free, open-source Burmese typing practice, Myanmar Unicode lessons, and a typing speed and accuracy test.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "MyanTyper: Myanmar Unicode touch typing",
+    title: "MyanTyper: Free Open-Source Burmese Typing Practice",
     description:
-      "Free, open-source touch-typing tutor for the Windows Myanmar (Visual order) keyboard.",
+      "Free, open-source Burmese typing practice, Myanmar Unicode lessons, and a typing speed and accuracy test.",
   },
   icons: {
     icon: [
@@ -104,7 +104,7 @@ export default function RootLayout({
             name: SITE_NAME,
             url: SITE_URL,
             description:
-              "Free, open-source touch-typing tutor for the Windows Myanmar (Visual order) keyboard.",
+              "Free, open-source Burmese typing practice, Myanmar Unicode lessons, and typing tests for the Windows Myanmar keyboard.",
             inLanguage: ["en", "my"],
           }}
         />

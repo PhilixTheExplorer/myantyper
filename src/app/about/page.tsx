@@ -15,9 +15,9 @@ import {
 } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: { absolute: "About MyanTyper: free Myanmar Unicode typing tutor" },
+  title: { absolute: "About MyanTyper: open-source Burmese typing tutor" },
   description:
-    "MyanTyper is a free, open-source Myanmar Unicode typing tutor. No ads. No tracking. No account required.",
+    "MyanTyper is a free, open-source Burmese and Myanmar Unicode typing tutor with no ads, tracking, or required account.",
   alternates: { canonical: "/about" },
   openGraph: {
     title: "About MyanTyper",
