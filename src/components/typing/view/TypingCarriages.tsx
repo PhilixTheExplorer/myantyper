@@ -98,8 +98,10 @@ export function ReaderCarriage({
   return (
     <div
       className={cn(
-        "leading-snug text-pretty",
-        compact ? "text-xl sm:text-2xl" : "text-2xl sm:text-4xl",
+        "overflow-hidden leading-snug text-pretty",
+        compact
+          ? "max-h-20 text-xl sm:max-h-24 sm:text-2xl"
+          : "max-h-28 text-2xl sm:max-h-36 sm:text-4xl",
       )}
     >
       <div

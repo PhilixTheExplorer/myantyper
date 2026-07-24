@@ -1,4 +1,5 @@
 import { fingerLabelForKey } from "@/lib/keyboard";
+import { segmentSyllables } from "@/lib/syllable";
 import { cn } from "@/lib/utils";
 import { formatDuration } from "@/lib/wpm";
 import { Keyboard } from "../../keyboard/Keyboard";
@@ -75,7 +76,7 @@ export function TypingSessionPractice({
           </div>
         ))}
       </div>
-      <div className="mb-2 grid min-h-0 flex-1 grid-cols-1 items-start gap-3 xl:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="mb-2 grid min-h-0 flex-1 content-start grid-cols-1 items-start gap-3 xl:grid-cols-[minmax(0,1fr)_300px]">
         <Keyboard
           highlight={session.expectedHint}
           pressedKeys={session.pressed}
@@ -85,6 +86,7 @@ export function TypingSessionPractice({
         <ParagraphPreview
           lines={session.paragraphLines}
           currentLine={session.currentLine}
+          cursorIndex={session.cursorIndex}
         />
       </div>
     </div>
@@ -158,30 +160,83 @@ function MistakeNotice({ mistake }: { mistake: Mistake }) {
 function ParagraphPreview({
   lines,
   currentLine,
+  cursorIndex,
 }: {
   lines: ParagraphLine[];
   currentLine: number;
+  cursorIndex: number;
 }) {
+  const firstLine = Math.max(0, currentLine - 1);
+  const visibleLines = lines.slice(firstLine, currentLine + 2);
+
   return (
-    <aside className="mt-surface min-w-0 p-4 xl:h-full">
+    <aside className="mt-surface flex min-w-0 flex-col p-4 xl:self-stretch xl:[contain:size]">
       <div className="mt-eyebrow mb-3">Paragraph</div>
-      <div lang="my" className="mt-myanmar flex flex-col gap-2 text-base">
-        {lines.map((line, index) => (
-          <p
-            key={line.start}
-            className={cn(
-              "border-l-2 pl-3 leading-relaxed",
-              index === currentLine
-                ? "border-accent text-ink"
-                : index < currentLine
-                  ? "border-border-soft text-ink-soft"
-                  : "border-transparent text-ink-dim",
-            )}
-          >
-            {line.text || "\u00a0"}
-          </p>
-        ))}
+      <div
+        lang="my"
+        className="mt-myanmar flex min-h-0 flex-1 flex-col gap-2 overflow-hidden text-base"
+      >
+        {visibleLines.map((line, offset) => {
+          const index = firstLine + offset;
+          const active = index === currentLine;
+          return (
+            <p
+              key={line.start}
+              className={cn(
+                "border-l-2 pl-3 leading-relaxed",
+                active ? "line-clamp-8" : "line-clamp-1",
+                active
+                  ? "border-accent text-ink"
+                  : index < currentLine
+                    ? "border-border-soft text-ink-soft"
+                    : "border-transparent text-ink-dim",
+              )}
+            >
+              {paragraphLineExcerpt(line, active ? cursorIndex : undefined)}
+            </p>
+          );
+        })}
       </div>
     </aside>
   );
+}
+
+const PARAGRAPH_CHUNK_STEP = 80;
+const PARAGRAPH_CHUNK_SIZE = 120;
+const PARAGRAPH_CONTEXT_SIZE = 24;
+
+function paragraphLineExcerpt(
+  line: ParagraphLine,
+  cursorIndex?: number,
+): string {
+  if (!line.text) return "\u00a0";
+
+  const chars = Array.from(line.text);
+  const syllables = segmentSyllables(chars);
+  const relativeCursor =
+    cursorIndex === undefined
+      ? 0
+      : Math.max(0, Math.min(chars.length, cursorIndex - line.start));
+  const matchingSyllable = syllables.findIndex(
+    ([, end]) => relativeCursor < end,
+  );
+  const activeSyllable =
+    matchingSyllable === -1
+      ? Math.max(0, syllables.length - 1)
+      : matchingSyllable;
+  const chunkStep =
+    cursorIndex === undefined ? PARAGRAPH_CONTEXT_SIZE : PARAGRAPH_CHUNK_STEP;
+  const chunkSize =
+    cursorIndex === undefined ? PARAGRAPH_CONTEXT_SIZE : PARAGRAPH_CHUNK_SIZE;
+  const firstSyllable = Math.floor(activeSyllable / chunkStep) * chunkStep;
+  const visibleSyllables = syllables.slice(
+    firstSyllable,
+    firstSyllable + chunkSize,
+  );
+  const start = visibleSyllables[0]?.[0] ?? 0;
+  const end = visibleSyllables.at(-1)?.[1] ?? chars.length;
+
+  return `${start > 0 ? "… " : ""}${chars.slice(start, end).join("")}${
+    end < chars.length ? " …" : ""
+  }`;
 }
