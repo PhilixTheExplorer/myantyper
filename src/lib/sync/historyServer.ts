@@ -1,16 +1,11 @@
 import { and, asc, eq, gt } from "drizzle-orm";
 import { getDatabase } from "@/db";
 import { history } from "@/db/schema";
-import { getAuth } from "@/lib/auth/server";
+import { authenticatedUserId } from "@/lib/auth/session";
 import type { HistoryEntry } from "@/lib/progress/types";
 import type { HistorySyncRepository } from "./historyApi";
 
-export async function authenticatedHistoryUserId(
-  headers: Headers,
-): Promise<string | null> {
-  const session = await getAuth().api.getSession({ headers });
-  return session?.user.id ?? null;
-}
+export const authenticatedHistoryUserId = authenticatedUserId;
 
 export const databaseHistorySyncRepository: HistorySyncRepository = {
   async upload(userId, entries) {

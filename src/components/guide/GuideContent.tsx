@@ -125,9 +125,14 @@ function EnglishGuide({ firstLessonId }: { firstLessonId: string }) {
 
       <Section title="Progress and privacy">
         <p>
-          The current release stores lesson history and appearance preferences
-          in this browser. Clearing the site&apos;s browser data removes them.
-          There are no ads, no tracking, and no account is required.
+          Lesson history and appearance preferences are stored in this browser,
+          so practice works without an account or network connection. If you
+          optionally sign in with Google, typing history is also copied to your
+          account so it can sync across devices; appearance preferences remain
+          local. Clearing browser data removes the local copy, while synced
+          history remains until you delete the account. See the{" "}
+          <A href="/privacy">privacy policy</A> for details. There are no ads,
+          analytics, or third-party tracking.
         </p>
       </Section>
 

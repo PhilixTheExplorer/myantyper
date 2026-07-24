@@ -82,15 +82,23 @@ export function SiteFooter() {
       </div>
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 justify-between text-xs text-ink-soft tracking-widest pt-5 border-t border-dashed border-border-soft">
         <span>&copy; 2026 PhilixTheExplorer</span>
-        <a
-          href={GITHUB_REPO_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 transition-colors hover:text-ink"
-        >
-          <GitHubMark />
-          GitHub
-        </a>
+        <div className="flex items-center gap-4">
+          <Link href="/privacy" className="transition-colors hover:text-ink">
+            Privacy
+          </Link>
+          <Link href="/terms" className="transition-colors hover:text-ink">
+            Terms
+          </Link>
+          <a
+            href={GITHUB_REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 transition-colors hover:text-ink"
+          >
+            <GitHubMark />
+            GitHub
+          </a>
+        </div>
       </div>
     </footer>
   );

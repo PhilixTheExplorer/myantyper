@@ -53,8 +53,13 @@ export function A({
   children: React.ReactNode;
 }) {
   const external = href.startsWith("http");
+  const email = href.startsWith("mailto:");
   const cls = "text-accent underline underline-offset-2 hover:opacity-80";
-  return external ? (
+  return email ? (
+    <a href={href} className={cls}>
+      {children}
+    </a>
+  ) : external ? (
     <a href={href} className={cls} target="_blank" rel="noopener noreferrer">
       {children}
     </a>

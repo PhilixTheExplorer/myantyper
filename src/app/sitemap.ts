@@ -11,6 +11,8 @@ const STATIC_ROUTES = [
   "/about",
   "/myanmar-unicode",
   "/myanmar-keyboard",
+  "/privacy",
+  "/terms",
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

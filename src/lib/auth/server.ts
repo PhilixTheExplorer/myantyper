@@ -3,6 +3,7 @@ import { betterAuth } from "better-auth";
 import { getDatabase } from "@/db";
 import { authSchema } from "@/db/schema";
 import { readServerEnvironment } from "@/lib/env/server";
+import { revokeGoogleToken } from "./revokeGoogle";
 
 export function createAuth() {
   const environment = readServerEnvironment();
@@ -14,7 +15,31 @@ export function createAuth() {
       provider: "pg",
       schema: authSchema,
     }),
+    account: {
+      encryptOAuthTokens: true,
+    },
     emailAndPassword: { enabled: false },
+    user: {
+      deleteUser: {
+        enabled: true,
+        async beforeDelete(_user, request) {
+          if (!request) return;
+
+          try {
+            const { accessToken } = await getAuth().api.getAccessToken({
+              body: { providerId: "google" },
+              headers: request.headers,
+            });
+            if (!(await revokeGoogleToken(accessToken))) {
+              console.error("Google token revocation was not accepted.");
+            }
+          } catch (error) {
+            const name = error instanceof Error ? error.name : "UnknownError";
+            console.error(`Google token revocation failed (${name}).`);
+          }
+        },
+      },
+    },
     socialProviders: {
       google: {
         clientId: environment.GOOGLE_CLIENT_ID,

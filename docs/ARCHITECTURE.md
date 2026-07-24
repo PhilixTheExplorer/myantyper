@@ -16,7 +16,8 @@ statically generated:
 - Vitest 4, Biome 2, and Lefthook 2 for local and CI verification
 - Optional Google authentication through Better Auth, Neon Postgres, and
   Drizzle ORM; local practice still requires no account
-- No analytics or remote progress persistence
+- No analytics; remote persistence is limited to optional account-scoped
+  typing-history sync
 - Browser IndexedDB for session history and `localStorage` for visual preferences
 - WebAudio synthesis for feedback; no audio files
 
@@ -341,6 +342,8 @@ viewport through these layout rules:
 | `/myanmar-keyboard` | Keyboard reference |
 | `/myanmar-unicode` | Unicode reference |
 | `/about` | Project information |
+| `/privacy` | Privacy policy for anonymous use, optional accounts, and synchronized data |
+| `/terms` | Terms for using the public service and optional account features |
 | `/api/auth/[...all]` | Better Auth API for Google sign-in and account sessions |
 | `/api/sync/history` | Authenticated, paginated push and pull transport for immutable history entries |
 

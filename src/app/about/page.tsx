@@ -81,10 +81,12 @@ export default function AboutPage() {
 
       <Section title="Principles">
         <p>
-          <strong>No ads. No tracking. No account required.</strong> MyanTyper
-          has no analytics. Lesson history and preferences are saved only in
-          your browser&apos;s local storage. The current release does not
-          transmit that practice data.
+          <strong>No ads. No tracking. No analytics.</strong> MyanTyper is
+          anonymous and local-first by default: your lesson history and
+          preferences are saved only in your browser. An optional account lets
+          you sign in with Google to sync your history across your own devices,
+          and your practice data is not uploaded unless you do. See the{" "}
+          <A href="/privacy">privacy policy</A> for details.
         </p>
         <p>
           <strong>Open source.</strong> The project is licensed under the GNU

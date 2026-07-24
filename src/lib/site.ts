@@ -7,6 +7,7 @@ export const GITHUB_REPO_URL = "https://github.com/PhilixTheExplorer/myantyper";
 export const GITHUB_ISSUES_URL = `${GITHUB_REPO_URL}/issues`;
 export const GITHUB_SPONSOR_URL =
   "https://github.com/sponsors/PhilixTheExplorer";
+export const PRIVACY_EMAIL = "philix.oss@gmail.com";
 
 export function techArticleSchema({
   path,

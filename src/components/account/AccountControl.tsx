@@ -9,6 +9,7 @@ import {
   LogIn,
   LogOut,
   RefreshCw,
+  Trash2,
   UserRound,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -153,9 +154,89 @@ export function AccountControl({ compact = false }: { compact?: boolean }) {
               {message}
             </p>
           )}
+
+          <DeleteAccountSection close={close} />
         </>
       )}
     </HeaderPopover>
+  );
+}
+
+function DeleteAccountSection({ close }: { close: () => void }) {
+  const [confirming, setConfirming] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+
+  const deleteAccount = async () => {
+    setPending(true);
+    setError("");
+    try {
+      const result = await authClient.deleteUser();
+      if (result.error) {
+        const needsFreshSignIn =
+          result.error.code === "SESSION_EXPIRED" ||
+          result.error.status === 401;
+        setError(
+          needsFreshSignIn
+            ? "For security, sign out and sign in again before deleting."
+            : "Account deletion failed. Please try again.",
+        );
+        return;
+      }
+      close();
+      window.location.assign("/");
+    } catch {
+      setError("Account deletion is currently unavailable.");
+    } finally {
+      setPending(false);
+    }
+  };
+
+  return (
+    <div className="mt-2 border-t border-dashed border-border-soft pt-2">
+      {confirming ? (
+        <div className="flex flex-col gap-2">
+          <p className="text-xs leading-relaxed text-ink-soft">
+            This permanently deletes your account and all synced history from
+            our servers, and can&apos;t be undone. History saved locally on this
+            device is not removed.
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={pending}
+              onClick={deleteAccount}
+              className="mt-action flex min-h-9 flex-1 items-center justify-center gap-2 border border-error px-3 text-xs tracking-widest text-error uppercase disabled:cursor-wait disabled:opacity-50"
+            >
+              <Trash2 size={14} />
+              {pending ? "Deleting" : "Delete"}
+            </button>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => setConfirming(false)}
+              className="mt-action mt-action-outline flex min-h-9 flex-1 items-center justify-center border border-border-soft px-3 text-xs tracking-widest text-ink-soft uppercase disabled:cursor-wait disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setConfirming(true)}
+          className="mt-action flex min-h-9 w-full items-center justify-center gap-2 px-3 text-xs tracking-widest text-error uppercase hover:opacity-80"
+        >
+          <Trash2 size={14} />
+          Delete account
+        </button>
+      )}
+      {error && (
+        <p className="mt-2 text-xs leading-relaxed text-error" role="status">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }
 

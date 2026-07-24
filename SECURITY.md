@@ -31,7 +31,8 @@ the GitHub profile without publishing exploit details.
   browser. Anyone with access to the same browser profile can read or change it.
 - OAuth, database, and auth-secret environment variables must remain server
   side and must never use a `NEXT_PUBLIC_` prefix.
-- Authentication does not currently upload typing history.
+- Anonymous typing history remains local. After sign-in, account-scoped history
+  is uploaded through the authenticated sync API.
 - The project does not claim to protect data on a compromised device or against
   malicious browser extensions.
 - Reports should demonstrate a security impact rather than only a missing
