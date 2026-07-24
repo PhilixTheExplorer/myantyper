@@ -81,26 +81,34 @@ export interface HistorySummary {
   totalMinutes: number;
 }
 
-export function summarizeHistory(
-  history: readonly HistoryEntry[],
-): HistorySummary {
-  const n = history.length;
-  if (n === 0) {
-    return {
+export interface LessonHistoryStat {
+  best: number;
+  bestAcc: number;
+  attempts: number;
+}
+
+export interface HistoryOverview {
+  summary: HistorySummary;
+  lessonStats: Map<string, LessonHistoryStat>;
+  /** Newest first, bounded by the store. */
+  recent: HistoryEntry[];
+}
+
+export interface HistoryPage {
+  entries: HistoryEntry[];
+  total: number;
+}
+
+export function emptyHistoryOverview(): HistoryOverview {
+  return {
+    summary: {
       sessions: 0,
       bestWPM: 0,
       avgWPM: 0,
       avgAccuracy: 0,
       totalMinutes: 0,
-    };
-  }
-  const sum = (pick: (h: HistoryEntry) => number) =>
-    history.reduce((acc, h) => acc + pick(h), 0);
-  return {
-    sessions: n,
-    bestWPM: Math.max(...history.map((h) => h.wpm)),
-    avgWPM: Math.round(sum((h) => h.wpm) / n),
-    avgAccuracy: Math.round((sum((h) => h.accuracy) / n) * 10) / 10,
-    totalMinutes: Math.round(sum((h) => h.seconds) / 60),
+    },
+    lessonStats: new Map(),
+    recent: [],
   };
 }

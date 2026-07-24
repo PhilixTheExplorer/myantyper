@@ -66,7 +66,6 @@ experience but cannot provide the authentication route.
 | `src/db/` | Neon connection and Drizzle schemas for authentication and the server history mirror |
 | `src/lib/sync/` | Authenticated history transport, database repository, and local-first browser sync coordinator |
 | `src/lib/wpm.ts` | Pure typing-stat calculations |
-| `src/lib/lessonStats.ts` | Pure per-lesson history roll-up (best WPM, best accuracy, attempts) for the catalogue |
 | `src/lib/themes.ts` | Theme and Myanmar-font definitions |
 | `src/styles/` | Global CSS, Tailwind aliases, and theme tokens |
 | `public/` | Static assets and self-hosted fonts |
@@ -193,12 +192,15 @@ with no conflict resolution. Entries record `completedAt` as epoch milliseconds
 and a `schemaVersion` per entry, not just per store, because once entries sync
 one log holds records written by clients on different versions.
 
-The database starts with three object stores:
+The database has four object stores:
 
 - `sessions`: immutable records keyed by local scope and session ID, with
   indexes for scope, completion time, and lesson ID
-- `outbox`: pending account-scoped uploads, keyed by user and session ID
+- `outbox`: pending account-scoped uploads, keyed by user and session ID and
+  indexed by queued time for bounded sync batches
 - `syncMetadata`: each account's remote pull cursor and last sync time
+- `aggregates`: constant-size all-time totals, per-lesson rollups, and the
+  newest 30 sessions for each local scope
 
 Signed-out history uses the `anonymous` scope. Signed-in history uses an
 account-specific scope, with pending uploads in `outbox` and a per-account
@@ -208,10 +210,16 @@ into the account scope without deleting the anonymous records.
 Access goes through the async `ProgressStore` interface. `getProgressStore()`
 in `index.ts` is the neutral composition point for anonymous and
 account-scoped IndexedDB stores.
-`HistoryProvider` holds the live cache and subscribes to the store, so
-cross-context `BroadcastChannel` handling stays inside the store rather than
-the provider. It also exposes loading and failure state so persistence errors
-do not become unhandled promise rejections.
+`HistoryProvider` holds only the constant-size overview and subscribes to the
+store, so cross-context `BroadcastChannel` handling stays inside the store
+rather than the provider. History tables request bounded newest-first pages
+through the completion-time index; the full append-only log is never loaded
+into React memory. Aggregate records are updated transactionally with local
+appends, anonymous imports, and remote merges. A version-1 database lazily
+builds its aggregate once after upgrading. The provider also exposes loading
+and failure state so persistence errors do not become unhandled promise
+rejections. Numeric page URLs use `IDBCursor.advance(offset)`: memory and
+returned data stay bounded, while seeking a very deep page remains O(offset).
 
 Browser storage access remains behind client-only effects. Invalid session
 records are dropped individually rather than breaking the whole history. There

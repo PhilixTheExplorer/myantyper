@@ -2,23 +2,17 @@
 
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { useMemo } from "react";
-import { summarizeHistory } from "@/lib/progress/types";
 import { useHistory } from "../providers/HistoryProvider";
 
 export function HomeStats() {
-  const { history } = useHistory();
-
-  const stats = useMemo(() => {
-    const s = summarizeHistory(history);
-    return {
-      total: s.sessions,
-      avgWPM: s.avgWPM,
-      avgAcc: s.avgAccuracy.toFixed(1),
-      minutes: s.totalMinutes,
-      recent: history[0] ?? null,
-    };
-  }, [history]);
+  const { overview } = useHistory();
+  const stats = {
+    total: overview.summary.sessions,
+    avgWPM: overview.summary.avgWPM,
+    avgAcc: overview.summary.avgAccuracy.toFixed(1),
+    minutes: overview.summary.totalMinutes,
+    recent: overview.recent[0] ?? null,
+  };
 
   return (
     <div className="flex flex-col gap-4 lg:grid lg:h-full lg:auto-rows-fr">

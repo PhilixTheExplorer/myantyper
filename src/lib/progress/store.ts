@@ -1,11 +1,13 @@
-import type { HistoryEntry } from "./types";
+import type { HistoryEntry, HistoryOverview, HistoryPage } from "./types";
 
 /** Async so callers survive a store that cannot be synchronous. */
 export interface ProgressStore {
-  /** Newest first. */
-  listHistory(): Promise<HistoryEntry[]>;
-  /** Idempotent by entry id. Resolves to the resulting log, newest first. */
-  appendHistory(entry: HistoryEntry): Promise<HistoryEntry[]>;
+  /** Reads a bounded newest-first window without materializing the full log. */
+  listHistoryPage(offset: number, limit: number): Promise<HistoryPage>;
+  /** Constant-size all-time rollups plus a bounded recent window. */
+  getHistoryOverview(): Promise<HistoryOverview>;
+  /** Idempotent by entry id. */
+  appendHistory(entry: HistoryEntry): Promise<void>;
   /** Fires on changes from another browser context. Returns an unsubscribe. */
   subscribe(onChange: () => void): () => void;
 }

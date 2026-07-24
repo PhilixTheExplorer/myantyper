@@ -2,8 +2,9 @@
 
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import { summarizeHistory } from "@/lib/progress/types";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { progressErrorMessage } from "@/lib/progress/store";
+import type { HistoryEntry } from "@/lib/progress/types";
 import { formatDuration } from "@/lib/wpm";
 import { useHistory } from "../providers/HistoryProvider";
 import { StatsPanel } from "../ui/StatsPanel";
@@ -16,21 +17,26 @@ export function HistoryView() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { history, historyError, isHistoryLoading, retryHistory } =
-    useHistory();
+  const {
+    overview,
+    historyRevision,
+    historyError,
+    isHistoryLoading,
+    listHistoryPage,
+    retryHistory,
+  } = useHistory();
   const newestHistoryId = useRef<string | undefined>(undefined);
+  const [visibleHistory, setVisibleHistory] = useState<HistoryEntry[]>([]);
+  const [pageError, setPageError] = useState<string | null>(null);
+  const [isPageLoading, setIsPageLoading] = useState(false);
 
-  const totals = useMemo(() => summarizeHistory(history), [history]);
+  const totals = overview.summary;
   const pageParam = Number(searchParams.get("page"));
   const requestedPage =
     Number.isInteger(pageParam) && pageParam > 0 ? pageParam : 1;
-  const pageCount = Math.max(1, Math.ceil(history.length / SESSIONS_PER_PAGE));
+  const pageCount = Math.max(1, Math.ceil(totals.sessions / SESSIONS_PER_PAGE));
   const currentPage = Math.min(requestedPage, pageCount);
   const pageStart = (currentPage - 1) * SESSIONS_PER_PAGE;
-  const visibleHistory = history.slice(
-    pageStart,
-    pageStart + SESSIONS_PER_PAGE,
-  );
 
   const replacePage = useCallback(
     (page: number) => {
@@ -46,7 +52,7 @@ export function HistoryView() {
   );
 
   useEffect(() => {
-    const nextNewestId = history[0]?.id;
+    const nextNewestId = overview.recent[0]?.id;
     if (
       newestHistoryId.current !== undefined &&
       nextNewestId !== newestHistoryId.current &&
@@ -55,9 +61,43 @@ export function HistoryView() {
       replacePage(1);
     }
     newestHistoryId.current = nextNewestId;
-  }, [history, requestedPage, replacePage]);
+  }, [overview.recent, requestedPage, replacePage]);
 
-  if (isHistoryLoading && !history.length) {
+  // historyRevision deliberately invalidates the visible page after append,
+  // import, remote sync, or a cross-tab write.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: see above
+  useEffect(() => {
+    if (isHistoryLoading || totals.sessions === 0) {
+      if (totals.sessions === 0) setVisibleHistory([]);
+      return;
+    }
+
+    let active = true;
+    setIsPageLoading(true);
+    setVisibleHistory([]);
+    setPageError(null);
+    void listHistoryPage(pageStart, SESSIONS_PER_PAGE)
+      .then((page) => {
+        if (active) setVisibleHistory(page.entries);
+      })
+      .catch((error: unknown) => {
+        if (active) setPageError(progressErrorMessage(error));
+      })
+      .finally(() => {
+        if (active) setIsPageLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [
+    historyRevision,
+    isHistoryLoading,
+    listHistoryPage,
+    pageStart,
+    totals.sessions,
+  ]);
+
+  if (isHistoryLoading && totals.sessions === 0) {
     return (
       <div className="mt-surface p-10 text-center text-ink-soft">
         Loading history…
@@ -65,14 +105,14 @@ export function HistoryView() {
     );
   }
 
-  if (!history.length) {
-    if (historyError) {
+  if (totals.sessions === 0) {
+    if (historyError || pageError) {
       return (
         <div
           role="alert"
           className="mt-surface flex items-center justify-between gap-4 border-error p-4 text-sm text-error"
         >
-          <span>{historyError}</span>
+          <span>{historyError || pageError}</span>
           <button
             type="button"
             className="mt-action mt-action-outline shrink-0 border border-border-soft px-3 py-2 text-xs tracking-widest uppercase"
@@ -92,12 +132,12 @@ export function HistoryView() {
 
   return (
     <>
-      {historyError && (
+      {(historyError || pageError) && (
         <div
           role="alert"
           className="mt-surface mb-6 flex items-center justify-between gap-4 border-error p-4 text-sm text-error"
         >
-          <span>{historyError}</span>
+          <span>{historyError || pageError}</span>
           <button
             type="button"
             className="mt-action mt-action-outline shrink-0 border border-border-soft px-3 py-2 text-xs tracking-widest uppercase"
@@ -140,7 +180,7 @@ export function HistoryView() {
       </div>
 
       <WpmTrend
-        history={history.slice(0, TREND_SESSION_LIMIT)}
+        history={overview.recent.slice(0, TREND_SESSION_LIMIT)}
         avg={totals.avgWPM}
       />
 
@@ -154,29 +194,35 @@ export function HistoryView() {
             <div>Time</div>
             <div>Keys</div>
           </div>
-          {visibleHistory.map((h, i) => (
-            <div
-              key={h.id}
-              className="grid grid-cols-[1.6fr_2fr_0.8fr_0.8fr_0.8fr_0.8fr] px-5 py-3.5 text-sm items-center"
-              style={{
-                borderBottom:
-                  i < visibleHistory.length - 1
-                    ? "1px dashed var(--mt-border-soft)"
-                    : "none",
-              }}
-            >
-              <div className="text-ink-soft">
-                {new Date(h.completedAt).toLocaleString()}
-              </div>
-              <div className="text-ink">
-                {h.lessonId} · {h.title}
-              </div>
-              <div className="mt-display text-lg text-accent">{h.wpm}</div>
-              <div>{h.accuracy}%</div>
-              <div>{formatDuration(h.seconds)}</div>
-              <div className="text-ink-soft">{h.keystrokes}</div>
+          {isPageLoading && visibleHistory.length === 0 ? (
+            <div className="px-5 py-8 text-center text-sm text-ink-soft">
+              Loading sessions…
             </div>
-          ))}
+          ) : (
+            visibleHistory.map((h, i) => (
+              <div
+                key={h.id}
+                className="grid grid-cols-[1.6fr_2fr_0.8fr_0.8fr_0.8fr_0.8fr] px-5 py-3.5 text-sm items-center"
+                style={{
+                  borderBottom:
+                    i < visibleHistory.length - 1
+                      ? "1px dashed var(--mt-border-soft)"
+                      : "none",
+                }}
+              >
+                <div className="text-ink-soft">
+                  {new Date(h.completedAt).toLocaleString()}
+                </div>
+                <div className="text-ink">
+                  {h.lessonId} · {h.title}
+                </div>
+                <div className="mt-display text-lg text-accent">{h.wpm}</div>
+                <div>{h.accuracy}%</div>
+                <div>{formatDuration(h.seconds)}</div>
+                <div className="text-ink-soft">{h.keystrokes}</div>
+              </div>
+            ))
+          )}
         </div>
       </div>
       {pageCount > 1 && (

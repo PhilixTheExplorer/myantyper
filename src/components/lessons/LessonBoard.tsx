@@ -4,15 +4,14 @@ import { cva } from "class-variance-authority";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo } from "react";
 import { StampSeal } from "@/components/ui/StampSeal";
-import { type LessonStat, lessonStatsFromHistory } from "@/lib/lessonStats";
 import {
   LESSON_TRACKS,
   type Lesson,
   lessonKindLabel,
   unitsByTrack,
 } from "@/lib/lessons";
+import type { LessonHistoryStat } from "@/lib/progress/types";
 import { cn } from "@/lib/utils";
 import { useHistory } from "../providers/HistoryProvider";
 
@@ -29,9 +28,8 @@ export function LessonBoard() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { history } = useHistory();
-
-  const stats = useMemo(() => lessonStatsFromHistory(history), [history]);
+  const { overview } = useHistory();
+  const stats = overview.lessonStats;
 
   const selectedTrack =
     LESSON_TRACKS.find((track) => track.id === searchParams.get("track")) ??
@@ -203,7 +201,7 @@ function LessonCard({
   stat,
 }: {
   lesson: Lesson;
-  stat: LessonStat | undefined;
+  stat: LessonHistoryStat | undefined;
 }) {
   const done = stat !== undefined;
   const kind = lessonKindLabel(lesson.kind);

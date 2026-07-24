@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { AccountProgressStore } from "@/lib/progress";
-import type { HistoryEntry } from "@/lib/progress/types";
+import { emptyHistoryOverview, type HistoryEntry } from "@/lib/progress/types";
 import { createHistorySyncController, syncHistory } from "./historyClient";
 
 function entry(id: string): HistoryEntry {
@@ -19,11 +19,12 @@ function entry(id: string): HistoryEntry {
 
 function createStore(overrides: Partial<AccountProgressStore> = {}) {
   return {
-    listHistory: vi.fn(async () => []),
-    appendHistory: vi.fn(async () => []),
+    listHistoryPage: vi.fn(async () => ({ entries: [], total: 0 })),
+    getHistoryOverview: vi.fn(async () => emptyHistoryOverview()),
+    appendHistory: vi.fn(async () => {}),
     subscribe: vi.fn(() => () => {}),
     close: vi.fn(async () => {}),
-    importAnonymousHistory: vi.fn(async () => []),
+    importAnonymousHistory: vi.fn(async () => 0),
     listPendingUploads: vi.fn(async () => []),
     acknowledgeUploads: vi.fn(async () => {}),
     getPullCursor: vi.fn(async () => "0"),

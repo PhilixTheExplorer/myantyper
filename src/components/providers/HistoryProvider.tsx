@@ -13,17 +13,21 @@ import { authClient } from "@/lib/auth/client";
 import { createAccountProgressStore, getProgressStore } from "@/lib/progress";
 import { progressErrorMessage } from "@/lib/progress/store";
 import {
+  emptyHistoryOverview,
   type HistoryDraft,
-  type HistoryEntry,
+  type HistoryOverview,
+  type HistoryPage,
   stampEntry,
 } from "@/lib/progress/types";
 import { createHistorySyncController } from "@/lib/sync/historyClient";
 
 interface HistoryContextValue {
-  history: HistoryEntry[];
+  overview: HistoryOverview;
+  historyRevision: number;
   historyError: string | null;
   isHistoryLoading: boolean;
   syncStatus: HistorySyncStatus;
+  listHistoryPage: (offset: number, limit: number) => Promise<HistoryPage>;
   appendHistory: (draft: HistoryDraft) => Promise<boolean>;
   retryHistory: () => void;
   retrySync: () => void;
@@ -48,7 +52,9 @@ export function useHistory(): HistoryContextValue {
 export function HistoryProvider({ children }: { children: React.ReactNode }) {
   const { data: session } = authClient.useSession();
   const userId = session?.user.id ?? null;
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [overview, setOverview] =
+    useState<HistoryOverview>(emptyHistoryOverview);
+  const [historyRevision, setHistoryRevision] = useState(0);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [isHistoryLoading, setIsHistoryLoading] = useState(true);
   const [syncStatus, setSyncStatus] = useState<HistorySyncStatus>("local");
@@ -59,6 +65,8 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
     [userId],
   );
   const store = accountStore ?? getProgressStore();
+  const activeStore = useRef(store);
+  activeStore.current = store;
   const syncController = useMemo(
     () => (accountStore ? createHistorySyncController(accountStore) : null),
     [accountStore],
@@ -102,25 +110,29 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
     }
   }, [syncController]);
 
+  const refreshHistory = useCallback(async () => {
+    setIsHistoryLoading(true);
+    try {
+      const nextOverview = await store.getHistoryOverview();
+      if (activeStore.current !== store) return;
+      setOverview(nextOverview);
+      setHistoryRevision((revision) => revision + 1);
+      setHistoryError(null);
+    } catch (error) {
+      if (activeStore.current === store) {
+        setHistoryError(progressErrorMessage(error));
+      }
+    } finally {
+      if (activeStore.current === store) setIsHistoryLoading(false);
+    }
+  }, [store]);
+
   // refreshVersion intentionally restarts this subscription after a retry.
   // biome-ignore lint/correctness/useExhaustiveDependencies: see above
   useEffect(() => {
     let active = true;
     const refresh = () => {
-      setIsHistoryLoading(true);
-      void store
-        .listHistory()
-        .then((entries) => {
-          if (!active) return;
-          setHistory(entries);
-          setHistoryError(null);
-        })
-        .catch((error: unknown) => {
-          if (active) setHistoryError(progressErrorMessage(error));
-        })
-        .finally(() => {
-          if (active) setIsHistoryLoading(false);
-        });
+      if (active) void refreshHistory();
     };
 
     refresh();
@@ -161,48 +173,52 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [accountStore, refreshVersion, store, syncController, synchronize]);
+  }, [
+    accountStore,
+    refreshHistory,
+    refreshVersion,
+    store,
+    syncController,
+    synchronize,
+  ]);
 
   const retryHistory = useCallback(() => {
     setRefreshVersion((version) => version + 1);
   }, []);
 
   const retrySync = useCallback(() => {
-    void synchronize().then(async () => {
-      try {
-        setHistory(await store.listHistory());
-        setHistoryError(null);
-      } catch (error) {
-        setHistoryError(progressErrorMessage(error));
-      }
-    });
-  }, [store, synchronize]);
+    void synchronize().then(refreshHistory);
+  }, [refreshHistory, synchronize]);
+
+  const listHistoryPage = useCallback(
+    (offset: number, limit: number) => store.listHistoryPage(offset, limit),
+    [store],
+  );
 
   const appendHistory = useCallback(
     async (draft: HistoryDraft) => {
       try {
-        const entries = await store.appendHistory(stampEntry(draft));
-        setHistory(entries);
-        setHistoryError(null);
-        void synchronize().then(async () => {
-          setHistory(await store.listHistory());
-        });
+        await store.appendHistory(stampEntry(draft));
+        await refreshHistory();
+        void synchronize().then(refreshHistory);
         return true;
       } catch (error) {
         setHistoryError(progressErrorMessage(error));
         return false;
       }
     },
-    [store, synchronize],
+    [refreshHistory, store, synchronize],
   );
 
   return (
     <HistoryContext.Provider
       value={{
-        history,
+        overview,
+        historyRevision,
         historyError,
         isHistoryLoading,
         syncStatus,
+        listHistoryPage,
         appendHistory,
         retryHistory,
         retrySync,
