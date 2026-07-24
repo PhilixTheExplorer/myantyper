@@ -99,15 +99,17 @@ function CompletionActions({
           onClick={restart}
           className="mt-action mt-action-outline inline-flex items-center justify-center gap-2 border border-border-soft px-4 py-2 text-xs tracking-widest text-ink uppercase"
         >
-          <RotateCcw size={12} /> Try again
+          <RotateCcw size={12} /> Try again <ShortcutKey>R</ShortcutKey>
         </button>
         {neighbors?.next ? (
           <ActionLink href={`/practice/${neighbors.next.id}`} tone="primary">
             Next lesson <ArrowRight size={12} />
+            <ShortcutKey>Enter</ShortcutKey>
           </ActionLink>
         ) : exitHref !== "/free" ? (
           <ActionLink href="/lessons" tone="primary">
             <CornerUpLeft size={12} /> Back to lessons
+            <ShortcutKey>Enter</ShortcutKey>
           </ActionLink>
         ) : null}
       </div>
@@ -120,6 +122,14 @@ function CompletionActions({
         </Link>
       )}
     </div>
+  );
+}
+
+function ShortcutKey({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd className="ml-1 border border-current px-1.5 py-0.5 text-[10px] leading-none opacity-70">
+      {children}
+    </kbd>
   );
 }
 
