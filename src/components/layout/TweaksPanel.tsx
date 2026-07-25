@@ -16,7 +16,7 @@ const toggleButton = cva("mt-action border flex items-center justify-center", {
   },
 });
 
-const fontChoice = cva("mt-action min-w-0 border p-2 text-left", {
+const fontChoice = cva("mt-action min-w-0 border p-1.5 text-left", {
   variants: {
     selected: {
       true: "bg-accent text-accent-ink border-accent",
@@ -24,6 +24,18 @@ const fontChoice = cva("mt-action min-w-0 border p-2 text-left", {
     },
   },
 });
+
+const themeChoice = cva(
+  "mt-action min-w-0 border p-1.5 text-left bg-surface-2",
+  {
+    variants: {
+      selected: {
+        true: "border-accent text-ink shadow-[inset_0_0_0_1px_var(--mt-accent)]",
+        false: "mt-action-outline border-border-soft text-ink-soft",
+      },
+    },
+  },
+);
 
 export function TweaksPanel() {
   const { tweaks, setTweaks } = useThemeTweaks();
@@ -49,7 +61,7 @@ export function TweaksPanel() {
     >
       {({ close }) => (
         <>
-          <header className="flex justify-between items-center mb-4">
+          <header className="flex justify-between items-center mb-3">
             <div className="mt-eyebrow">Tweaks</div>
             <button
               type="button"
@@ -62,24 +74,21 @@ export function TweaksPanel() {
           </header>
 
           <Section label="Aesthetic" />
-          <Row label="Theme">
-            <select
-              value={tweaks.theme}
-              onChange={(e) =>
-                setTweaks({
-                  theme: e.target.value as ThemeId,
-                  accentIndex: 0,
-                })
-              }
-              className="w-full bg-transparent border border-border-soft px-2 py-1 text-xs text-ink"
-            >
-              {Object.values(THEMES).map((th) => (
-                <option key={th.id} value={th.id}>
-                  {th.name}
-                </option>
+          <fieldset className="mb-2">
+            <legend className="text-xs text-ink-soft mb-1">Theme</legend>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.values(THEMES).map((theme) => (
+                <ThemeChoice
+                  key={theme.id}
+                  theme={theme}
+                  selected={tweaks.theme === theme.id}
+                  onSelect={() =>
+                    setTweaks({ theme: theme.id, accentIndex: 0 })
+                  }
+                />
               ))}
-            </select>
-          </Row>
+            </div>
+          </fieldset>
           <Row label="Accent">
             <div className="flex gap-2">
               {accentList.map((color, i) => (
@@ -101,8 +110,8 @@ export function TweaksPanel() {
           </Row>
 
           <Section label="Typography" />
-          <div className="mb-3">
-            <div className="text-xs text-ink-soft mb-2">Myanmar font</div>
+          <div className="mb-2">
+            <div className="text-xs text-ink-soft mb-1">Myanmar font</div>
             <div className="grid grid-cols-2 gap-2">
               {MYANMAR_FONTS.map((font) => (
                 <MyanmarFontChoice
@@ -129,6 +138,43 @@ export function TweaksPanel() {
   );
 }
 
+function ThemeChoice({
+  theme,
+  selected,
+  onSelect,
+}: {
+  theme: (typeof THEMES)[ThemeId];
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={selected}
+      className={themeChoice({ selected })}
+    >
+      <span
+        className="mb-1 flex h-5 items-center gap-1 border px-1.5"
+        style={{
+          background: theme.isDark ? "#101114" : "#f1e7d0",
+          borderColor: theme.accentPresets[0],
+        }}
+        aria-hidden="true"
+      >
+        {theme.accentPresets.map((color) => (
+          <span
+            key={color}
+            className="h-2.5 w-2.5 rounded-full"
+            style={{ background: color }}
+          />
+        ))}
+      </span>
+      <span className="block truncate text-xs">{theme.name}</span>
+    </button>
+  );
+}
+
 function MyanmarFontChoice({
   font,
   selected,
@@ -149,13 +195,6 @@ function MyanmarFontChoice({
         {font.label}
       </span>
       <span
-        lang="en"
-        className="block mt-1 text-xs"
-        style={{ fontFamily: font.stack }}
-      >
-        Aa Bb
-      </span>
-      <span
         lang="my"
         className="block mt-0.5 text-base leading-none"
         style={{ fontFamily: font.stack }}
@@ -168,7 +207,7 @@ function MyanmarFontChoice({
 
 function Section({ label }: { label: string }) {
   return (
-    <div className="mt-eyebrow mt-3 mb-2 pt-2 border-t border-dashed border-border-soft">
+    <div className="mt-eyebrow mt-2 mb-1.5 pt-1.5 border-t border-dashed border-border-soft">
       {label}
     </div>
   );
