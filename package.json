@@ -52,18 +52,18 @@
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.4",
+    "@biomejs/biome": "2.5.11",
     "@tailwindcss/postcss": "^4.3.2",
-    "@types/node": "^26.1.1",
+    "@types/node": "^26.4.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "babel-plugin-react-compiler": "1.0.0",
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
     "fake-indexeddb": "^6.2.5",
-    "lefthook": "^2.1.10",
+    "lefthook": "^2.1.12",
     "tailwindcss": "^4.3.2",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.10"
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
   }
 }
