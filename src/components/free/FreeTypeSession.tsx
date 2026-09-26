@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import { AppLink } from "@/components/ui/AppLink";
 import { hasKeyForChar } from "@/lib/keyboard";
 import type { Lesson } from "@/lib/lessons";
 import { normalizeMyanmar } from "@/lib/myanmar";
@@ -46,12 +46,12 @@ function MissingDraft() {
       <p className="mt-3 text-sm leading-relaxed text-ink-soft">
         Add or paste Myanmar Unicode text before starting a session.
       </p>
-      <Link
+      <AppLink
         href="/free"
         className="mt-action mt-action-primary mt-5 inline-flex border border-accent bg-accent px-4 py-2 text-xs tracking-widest text-accent-ink uppercase"
       >
         Edit text
-      </Link>
+      </AppLink>
     </div>
   );
 }

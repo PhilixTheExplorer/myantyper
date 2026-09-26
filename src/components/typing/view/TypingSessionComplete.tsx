@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowRight, CornerUpLeft, RotateCcw } from "lucide-react";
-import Link from "next/link";
+import { AppLink } from "@/components/ui/AppLink";
 import type { Lesson } from "@/lib/lessons";
 import { formatDuration } from "@/lib/wpm";
 import { StampSeal } from "../../ui/StampSeal";
@@ -114,12 +114,12 @@ function CompletionActions({
         ) : null}
       </div>
       {neighbors?.next && (
-        <Link
+        <AppLink
           href="/lessons"
           className="mt-action mt-action-quiet px-2 py-1 text-xs tracking-widest text-ink-soft uppercase"
         >
           Back to lessons
-        </Link>
+        </AppLink>
       )}
     </div>
   );
@@ -143,7 +143,7 @@ function ActionLink({
   children: React.ReactNode;
 }) {
   return (
-    <Link
+    <AppLink
       href={href}
       className={
         tone === "primary"
@@ -152,6 +152,6 @@ function ActionLink({
       }
     >
       {children}
-    </Link>
+    </AppLink>
   );
 }

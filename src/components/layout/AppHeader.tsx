@@ -3,9 +3,9 @@
 import { cva } from "class-variance-authority";
 import { Maximize2, Menu, Minimize2, X } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { AppLink } from "@/components/ui/AppLink";
 import { cn } from "@/lib/utils";
 import { AccountControl } from "../account/AccountControl";
 import { TweaksPanel } from "./TweaksPanel";
@@ -66,7 +66,7 @@ export function AppHeader() {
         compact ? "mb-3 pb-2" : "mb-5 pb-3",
       )}
     >
-      <Link href="/" className="flex items-center gap-3">
+      <AppLink href="/" className="flex items-center gap-3">
         <Image
           src="/myantyper.png"
           alt="MyanTyper"
@@ -76,19 +76,19 @@ export function AppHeader() {
           className="w-9 h-9 object-contain"
         />
         <div className="mt-display text-xl text-ink">MyanTyper</div>
-      </Link>
+      </AppLink>
       <nav className="hidden sm:flex flex-wrap gap-1">
         {ITEMS.map((it) => {
           const active =
             it.href === "/" ? pathname === "/" : pathname.startsWith(it.href);
           return (
-            <Link
+            <AppLink
               key={it.href}
               href={it.href}
               className={navItem({ active, desktop: true })}
             >
               {it.label}
-            </Link>
+            </AppLink>
           );
         })}
         <FullscreenButton
@@ -123,14 +123,14 @@ export function AppHeader() {
             const active =
               it.href === "/" ? pathname === "/" : pathname.startsWith(it.href);
             return (
-              <Link
+              <AppLink
                 key={it.href}
                 href={it.href}
                 onClick={() => setMobileMenuOpen(false)}
                 className={navItem({ active, desktop: false })}
               >
                 {it.label}
-              </Link>
+              </AppLink>
             );
           })}
         </nav>

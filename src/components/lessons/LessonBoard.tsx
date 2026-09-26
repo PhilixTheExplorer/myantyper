@@ -2,8 +2,8 @@
 
 import { cva } from "class-variance-authority";
 import { ArrowRight, ChevronDown } from "lucide-react";
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { AppLink } from "@/components/ui/AppLink";
 import { StampSeal } from "@/components/ui/StampSeal";
 import {
   LESSON_TRACKS,
@@ -108,7 +108,7 @@ export function LessonBoard() {
       </div>
 
       {nextLesson && (
-        <Link
+        <AppLink
           className="group mb-6 grid grid-cols-[4px_1fr] border border-border-soft bg-surface transition-colors hover:border-accent hover:bg-surface-2"
           href={`/practice/${nextLesson.id}`}
         >
@@ -134,7 +134,7 @@ export function LessonBoard() {
               />
             </span>
           </div>
-        </Link>
+        </AppLink>
       )}
 
       <div className="space-y-3">
@@ -208,7 +208,7 @@ function LessonCard({
   const lessonLabel = `${kind} ${lesson.kindNumber}`;
 
   return (
-    <Link
+    <AppLink
       href={`/practice/${lesson.id}`}
       className={cn(
         "mt-surface relative block p-3.5 transition-[background-color,border-color,transform] hover:-translate-y-0.5 hover:border-accent hover:bg-surface-2 focus-visible:border-accent focus-visible:bg-surface-2",
@@ -241,6 +241,6 @@ function LessonCard({
       <div className="mt-myanmar min-h-13.5 border-t border-dashed border-border-soft pt-2.5 text-xl leading-snug text-ink line-clamp-2">
         {lesson.lines[0]}
       </div>
-    </Link>
+    </AppLink>
   );
 }

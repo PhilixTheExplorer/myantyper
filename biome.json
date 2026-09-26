@@ -25,6 +25,16 @@
       "preset": "recommended",
       "suspicious": {
         "noUnknownAtRules": "off"
+      },
+      "style": {
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "paths": {
+              "next/link": "Use AppLink from @/components/ui/AppLink, which disables prefetching to keep Vercel edge requests down."
+            }
+          }
+        }
       }
     },
     "domains": {

@@ -41,7 +41,40 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   poweredByHeader: false,
   async headers() {
-    return [{ source: "/(.*)", headers: securityHeaders }];
+    // Public files default to max-age=0, so browsers revalidated the manifest,
+    // icons, and fonts on every page load and each 304 counted as an edge
+    // request. Top-level images are treated as immutable, so replacing one
+    // needs a new filename; the manifest and fonts may change and stay short.
+    return [
+      { source: "/(.*)", headers: securityHeaders },
+      {
+        source: "/:file([^/]+\\.png)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/site.webmanifest",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=604800",
+          },
+        ],
+      },
+      {
+        source: "/fonts/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=604800, stale-while-revalidate=2592000",
+          },
+        ],
+      },
+    ];
   },
 };
 

@@ -8,7 +8,7 @@ import {
   Play,
   RotateCcw,
 } from "lucide-react";
-import Link from "next/link";
+import { AppLink } from "@/components/ui/AppLink";
 import type { Lesson } from "@/lib/lessons";
 import { trackLabel } from "@/lib/lessons";
 import { cn } from "@/lib/utils";
@@ -72,7 +72,7 @@ export function TypingSessionHeader({
             <IconButton label="Restart" onClick={session.restart}>
               <RotateCcw size={13} />
             </IconButton>
-            <Link
+            <AppLink
               href={exitHref}
               aria-label={exitLabel}
               title={exitLabel}
@@ -83,7 +83,7 @@ export function TypingSessionHeader({
               ) : (
                 <CornerUpLeft size={13} />
               )}
-            </Link>
+            </AppLink>
           </div>
         </div>
       )}
@@ -110,12 +110,12 @@ function ModeHelp() {
           <strong className="text-ink">Reader</strong> shows natural Myanmar
           without the key-order rail. Use it for recall and fluency.
         </p>
-        <Link
+        <AppLink
           href="/guide#practice-modes"
           className="mt-3 inline-block text-accent underline underline-offset-2"
         >
           Read the learner guide
-        </Link>
+        </AppLink>
       </div>
     </details>
   );

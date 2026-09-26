@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { AppLink } from "@/components/ui/AppLink";
 
 export function Article({ children }: { children: React.ReactNode }) {
   return <main className="max-w-180">{children}</main>;
@@ -64,9 +64,9 @@ export function A({
       {children}
     </a>
   ) : (
-    <Link href={href} className={cls}>
+    <AppLink href={href} className={cls}>
       {children}
-    </Link>
+    </AppLink>
   );
 }
 
@@ -81,12 +81,12 @@ export function ArticleCTA({
 }) {
   return (
     <div className="mt-10 pt-6 border-t border-dashed border-border-soft flex flex-wrap items-center gap-4">
-      <Link
+      <AppLink
         href={href}
         className="mt-action mt-action-primary inline-flex items-center px-4 py-2 text-xs tracking-widest uppercase bg-accent text-accent-ink border border-accent"
       >
         ▸ {label}
-      </Link>
+      </AppLink>
       {note && <span className="text-xs text-ink-soft">{note}</span>}
     </div>
   );

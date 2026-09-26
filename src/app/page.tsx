@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { HomeStats } from "@/components/home/HomeStats";
+import { AppLink } from "@/components/ui/AppLink";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { StampSeal } from "@/components/ui/StampSeal";
 import { firstLessonByTrack, LESSON_TRACKS } from "@/lib/lessons";
@@ -79,33 +79,33 @@ export default function HomePage() {
             လက်ကွက်မကြည့်ဘဲ မြန်မာစာ ရိုက်တတ်အောင် လေ့ကျင့်ကြမယ်။
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <Link
+            <AppLink
               href={`/practice/${firstLesson.id}`}
               className="mt-action mt-action-primary inline-flex items-center px-4 py-2 text-xs tracking-widest uppercase bg-accent text-accent-ink border border-accent"
             >
               ▸ Begin Foundations
-            </Link>
-            <Link
+            </AppLink>
+            <AppLink
               href="/free"
               className="mt-action mt-action-outline inline-flex items-center px-4 py-2 text-xs tracking-widest uppercase border border-border-soft text-ink"
             >
               Free typing test
-            </Link>
-            <Link
+            </AppLink>
+            <AppLink
               href="/myanmar-keyboard"
               className="mt-action mt-action-outline inline-flex items-center px-4 py-2 text-xs tracking-widest uppercase border border-border-soft text-ink"
             >
               See the keyboard
-            </Link>
+            </AppLink>
           </div>
           <p className="mt-4 text-xs tracking-widest uppercase text-ink-soft">
             Free and open source · No ads · No tracking ·{" "}
-            <Link
+            <AppLink
               href="/about"
               className="text-accent underline underline-offset-2 hover:opacity-80"
             >
               About the project
-            </Link>
+            </AppLink>
           </p>
 
           <div className="absolute right-6 top-6 hidden sm:block">
@@ -122,7 +122,7 @@ export default function HomePage() {
           const first = firstLessonByTrack(track.id);
           if (!first) return null;
           return (
-            <Link
+            <AppLink
               key={track.id}
               href={`/practice/${first.id}`}
               className="group mt-surface mt-action flex h-full flex-col p-6 transition-colors hover:border-accent hover:bg-surface-2 focus-visible:border-accent focus-visible:bg-surface-2"
@@ -149,7 +149,7 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
-            </Link>
+            </AppLink>
           );
         })}
       </div>
@@ -160,7 +160,7 @@ export default function HomePage() {
           title="Built for real Myanmar typing"
         />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <Link
+          <AppLink
             href="/myanmar-keyboard"
             className="group mt-surface mt-action flex h-full flex-col p-6 transition-colors hover:border-accent hover:bg-surface-2 focus-visible:border-accent focus-visible:bg-surface-2"
           >
@@ -177,8 +177,8 @@ export default function HomePage() {
                 ▸ View keyboard
               </span>
             </div>
-          </Link>
-          <Link
+          </AppLink>
+          <AppLink
             href="/myanmar-unicode"
             className="group mt-surface mt-action flex h-full flex-col p-6 transition-colors hover:border-accent hover:bg-surface-2 focus-visible:border-accent focus-visible:bg-surface-2"
           >
@@ -195,7 +195,7 @@ export default function HomePage() {
                 ▸ Learn Unicode
               </span>
             </div>
-          </Link>
+          </AppLink>
         </div>
       </section>
 

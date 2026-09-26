@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect } from "react";
+import { AppLink } from "@/components/ui/AppLink";
 import { StampSeal } from "@/components/ui/StampSeal";
 
 export default function ErrorBoundary({
@@ -37,12 +37,12 @@ export default function ErrorBoundary({
           >
             ↻ Try again
           </button>
-          <Link
+          <AppLink
             href="/"
             className="mt-action mt-action-outline inline-flex items-center px-4 py-2 text-xs tracking-widest uppercase border border-border-soft text-ink"
           >
             Home
-          </Link>
+          </AppLink>
         </div>
       </div>
     </main>

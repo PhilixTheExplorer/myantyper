@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { AppLink } from "@/components/ui/AppLink";
 import { StampSeal } from "@/components/ui/StampSeal";
 
 export const metadata: Metadata = {
@@ -23,18 +23,18 @@ export default function NotFound() {
           </p>
         </div>
         <div className="flex flex-wrap gap-3 justify-center">
-          <Link
+          <AppLink
             href="/"
             className="mt-action mt-action-primary inline-flex items-center px-4 py-2 text-xs tracking-widest uppercase bg-accent text-accent-ink border border-accent"
           >
             ▸ Home
-          </Link>
-          <Link
+          </AppLink>
+          <AppLink
             href="/lessons"
             className="mt-action mt-action-outline inline-flex items-center px-4 py-2 text-xs tracking-widest uppercase border border-border-soft text-ink"
           >
             Lessons
-          </Link>
+          </AppLink>
         </div>
       </div>
     </main>

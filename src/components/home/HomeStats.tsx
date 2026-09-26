@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowRight } from "lucide-react";
-import Link from "next/link";
+import { AppLink } from "@/components/ui/AppLink";
 import { useHistory } from "../providers/HistoryProvider";
 
 export function HomeStats() {
@@ -42,7 +42,7 @@ export function HomeStats() {
         </div>
       </Card>
       {stats.recent && (
-        <Link
+        <AppLink
           href={`/practice/${stats.recent.lessonId}`}
           aria-label={`Continue ${stats.recent.title}`}
           className="mt-surface mt-action group flex flex-col p-5 transition-colors hover:border-accent hover:bg-surface-2 focus-visible:border-accent focus-visible:bg-surface-2"
@@ -56,7 +56,7 @@ export function HomeStats() {
               Continue <ArrowRight aria-hidden="true" size={14} />
             </span>
           </div>
-        </Link>
+        </AppLink>
       )}
     </div>
   );
