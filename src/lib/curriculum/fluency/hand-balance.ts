@@ -12,7 +12,7 @@ export const handBalanceUnit = {
       hint: "Intensive fluency across left-hand keys across authentic syllables",
       lines: [
         "ကန် မန် ပန် တန် ထန် ခန် ဆန်",
-        "ကာ မာ ပါ တာ ထာ ခာ ဆာ",
+        "ကာ မာ ပါ တာ ထာ ခါ ဆာ",
         "ကိ မိ ပိ တိ ထိ ခိ ဆိ",
         "ကေ မေ ပေ တေ ထေ ခေ ဆေ",
       ],
